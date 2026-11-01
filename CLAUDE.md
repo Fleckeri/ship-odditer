@@ -30,7 +30,7 @@ app/fonts/              Self-hosted Chakra Petch and Atkinson Hyperlegible (woff
                         their SIL OFL licences, plus odditer-symbols-400/700.woff2 (★ → ≥ ≈ ᴇ, our own; see below).
 docs/                   Built site (generated, not tracked; the workflow deploys it). JSON is minified here.
 tools/                  Build scripts; tools/update_data.sh runs the whole pipeline (see "Build pipeline").
-.github/workflows/      deploy.yml: fetch data, build, test, deploy to GitHub Pages.
+.github/workflows/      deploy.yml: fetch data, build, test, deploy to GitHub Pages. release.yml: GitHub release per tag.
 tests/                  Playwright smoke test, slider benchmark, tiny static server (Node).
 vendor/                 Local clones of upstream repos (git-ignored): vendor/egg, vendor/eggincassets.
 ```
@@ -69,8 +69,12 @@ turns off schedules in public repos after 60 days without repository activity an
 committed because it changes daily (~8 MB of generated JSON per refresh would bloat the repo); upstream's history keeps every
 snapshot.
 
-**Releasing.** Bump `version` in `package.json` (and `package-lock.json`), add a `CHANGELOG.md` entry, commit,
-tag `vX.Y.Z`, push. The footer shows the new version after the deploy. Don't `git grep` across the blobless
+**Releasing.** Bump `version` in `package.json` (and `package-lock.json`), add a `CHANGELOG.md` entry headed
+`## X.Y.Z (date)`, commit, tag `vX.Y.Z`, push (`git push origin main vX.Y.Z`). The footer shows the new version after
+the deploy. Pushing the tag runs `release.yml`, which creates the GitHub release "Ship Odditer X.Y.Z" with that
+changelog section as its notes (it fails if the section is missing, skips a tag that already has a release, and marks
+it latest only if it's the highest version). For a tag pushed without a release, run it from the Actions tab with the
+tag name. Commits and tags are GPG-signed (`commit.gpgsign`), so they're made from the owner's own terminal. Don't `git grep` across the blobless
 `vendor/egg` clone (it downloads every blob); use `git show HEAD:<path>`.
 
 `build_pwa.py` writes `index.html` (skeleton, meta, link-preview and SEO tags, CSP, service-worker registration),

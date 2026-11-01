@@ -1,0 +1,50 @@
+# Create the GitHub release for a version tag, with that version's section of CHANGELOG.md as its notes.
+# Runs when a tag like v1.2.0 is pushed (see "Releasing" in CLAUDE.md), and on demand from the Actions tab for a
+# tag that was pushed without a release.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, e.g. v1.2.0"
+        required: true
+
+permissions:
+  contents: write   # to create the release
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          # The "## <version> (date)" section, up to the next version's heading
+          python3 - "$version" > notes.md <<'EOF'
+          import re, sys
+          version = sys.argv[1]
+          for sec in re.split(r"(?m)^(?=## \d)", open("CHANGELOG.md").read()):
+              if re.match(rf"## {re.escape(version)}\b", sec):
+                  print(sec.rstrip())
+                  break
+          else:
+              sys.exit(f"CHANGELOG.md has no section for {version}")
+          EOF
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it as it is."
+            exit 0
+          fi
+          # Mark it latest only if it's the highest version tag (a fix to an older line shouldn't take that spot)
+          highest=$(git ls-remote --tags origin 'v*.*.*' | sed -n 's#.*refs/tags/\(v[0-9.]*\)$#\1#p' | sort -V | tail -1)
+          latest=$([ "$TAG" = "$highest" ] && echo true || echo false)
+          gh release create "$TAG" --title "Ship Odditer $version" --notes-file notes.md --verify-tag --latest="$latest"
