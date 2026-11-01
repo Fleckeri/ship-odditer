@@ -1,0 +1,22 @@
+{
+  "name": "ship-odditer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ship Odditer: Egg Inc. mission drop calculator (build tooling and tests)",
+  "homepage": "https://fleckeri.github.io/ship-odditer/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fleckeri/ship-odditer.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "python3 tools/build_pwa.py",
+    "data": "python3 tools/build_data.py && python3 tools/copy_icons.py",
+    "test": "python3 tools/build_pwa.py && node tests/smoke.js",
+    "bench": "node tests/bench.js top"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "^1.49.1"
+  }
+}
