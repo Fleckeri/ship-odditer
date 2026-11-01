@@ -144,14 +144,21 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
   await p.evaluate(() => { state.ship = 'voyegger'; state.target = '18'; render(); });
   check(await p.waitForFunction(() => curTgt === '18' && !!level(state.star), null, { timeout: 5000 }).then(() => true, () => false), 'targeted data loads offline');
   await ctx.close();
-  // Updates: an installed copy picks up a new deploy by itself, says so, reloads into it when the page goes to the
-  // background, and keeps working offline with the new data. Runs on a scratch copy of docs/ so it can "deploy".
+  // Updates: an installed copy picks up a new deploy by itself, downloads only what changed, reloads into it at the
+  // first quiet moment keeping your place, says so, and keeps working offline with the new data. Runs on a scratch
+  // copy of docs/ so it can "deploy".
   {
     const fs = require('fs'), os = require('os'), path = require('path');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'odditer-update-'));
     fs.cpSync(path.join(__dirname, '..', 'docs'), dir, { recursive: true });
-    const log = [], srv2 = await serve(dir, log), ctx = await b.newContext(), p = await ctx.newPage();
-    await p.goto(srv2.url); await p.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 });
+    const log = [], srv2 = await serve(dir, log), ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }), p = await ctx.newPage();
+    await p.goto(srv2.url); await p.waitForFunction(() => navigator.serviceWorker.controller && document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 });
+    // Read tier 3, just under the toolbar
+    const before = await p.evaluate(async () => {
+      const t3 = document.querySelector('#tiers section.tier[data-t="3"]');
+      scrollTo(0, t3.getBoundingClientRect().top + scrollY - document.getElementById('controls').getBoundingClientRect().bottom - 40);
+      await new Promise(r => setTimeout(r, 300)); return t3.getBoundingClientRect().top;
+    });
     // "Deploy" a new version: new data date, new service-worker version and data.json hash
     const data = JSON.parse(fs.readFileSync(path.join(dir, 'data.json'))); data.dataUpdated = '2030-01-02';
     const dataText = JSON.stringify(data), dataHash = require('crypto').createHash('sha256').update(dataText).digest('hex').slice(0, 16);
@@ -159,18 +166,20 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     const swPath = path.join(dir, 'sw.js'); fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8')
       .replace(/const VERSION = "\w+"/, 'const VERSION = "test-update"').replace(/"data\.json": "\w+"/, `"data.json": "${dataHash}"`));
     log.length = 0;
+    const reloaded = p.waitForEvent('load', { timeout: 20000 }).then(() => true, () => false);
     await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
-    const noted = await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 15000 }).then(() => true, () => false);
-    check(noted, 'a new deploy is noticed and announced');
-    const fetched = [...new Set(log)].sort();
+    const fetched = await reloaded.then(() => [...new Set(log)].sort());
     check(JSON.stringify(fetched) === '["/data.json","/sw.js"]', `the update downloads only the changed files ${JSON.stringify(fetched)}`);
-    const reloaded = p.waitForEvent('load', { timeout: 10000 }).then(() => true, () => false);
-    await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
-    check(await reloaded && /2 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent)), 'it reloads into the new version when the page goes to the background');
+    const shown = await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 10000 }).then(() => true, () => false);
+    await p.waitForTimeout(600);
+    const after = await p.evaluate(() => [document.getElementById('data-date').textContent, document.getElementById('update-note').textContent,
+      document.querySelector('#tiers section.tier[data-t="3"]').getBoundingClientRect().top]);
+    check(shown && /2 Jan 2030/.test(after[0]) && /updated/.test(after[1]), `a new deploy reloads by itself and says so ${JSON.stringify(after.slice(0, 2))}`);
+    check(Math.abs(after[2] - before) < 40, `the reload keeps your place (tier 3 at ${Math.round(before)} → ${Math.round(after[2])} px)`);
     await ctx.setOffline(true); await p.reload(); await p.waitForTimeout(1500);
     check(/2 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent).catch(() => '')) && await p.evaluate(() => document.querySelectorAll('#tiers tbody tr').length > 0), 'the updated version works offline');
-    // Another deploy takes over while the page is open. Picking a target then needs a targeted file, which would come
-    // from the new version, so the page reloads into it instead, keeping the target.
+    // Another deploy takes over while the page is open. Picking a target before the quiet reload needs a targeted
+    // file, which would come from the new version, so the page reloads into it at once, keeping the target.
     await ctx.setOffline(false);
     data.dataUpdated = '2030-01-03';
     const dataText2 = JSON.stringify(data), dataHash2 = require('crypto').createHash('sha256').update(dataText2).digest('hex').slice(0, 16);
@@ -178,11 +187,12 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8')
       .replace(/const VERSION = "[\w-]+"/, 'const VERSION = "test-update-2"').replace(/"data\.json": "\w+"/, `"data.json": "${dataHash2}"`));
     await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
-    await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 15000 });
+    await p.waitForFunction(() => replaced, null, { timeout: 15000 });
     const reloaded2 = p.waitForEvent('load', { timeout: 10000 }).then(() => true, () => false);
-    await p.click('#tgt-dd .dd-btn'); await p.click('#tgt-dd li:has-text("Book of Basan")');
-    const after = await reloaded2 && await p.waitForFunction(() => curTgt === '10', null, { timeout: 10000 }).then(() => true, () => false);
-    check(after && /3 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent)), 'a target picked after an update reloads into the new version, keeping the target');
+    await p.evaluate(() => { scrollTo(0, 0); document.querySelector('#tgt-dd .dd-btn').click(); });
+    await p.click('#tgt-dd li:has-text("Book of Basan")');
+    const kept = await reloaded2 && await p.waitForFunction(() => curTgt === '10', null, { timeout: 10000 }).then(() => true, () => false);
+    check(kept && /3 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent)), 'a target picked after an update reloads into the new version, keeping the target');
     await ctx.close(); srv2.close(); fs.rmSync(dir, { recursive: true, force: true });
   }
   await b.close(); srv.close();

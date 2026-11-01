@@ -2,6 +2,13 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.2.0 (2026-11-01)
+
+- Updates apply by themselves: the app reloads into a new version at the first quiet moment, keeps your place,
+  and briefly says it was updated (no more tapping Reload).
+- The toolbar stops following you at Nerd Stuff, where it isn't needed, and comes back when you scroll up.
+- Fixed: tier tables in Chrome showed a vertical scrollbar that moved a pixel or two.
+
 ## 1.1.0 (2026-11-01)
 
 A better fit on phones, and consistent text everywhere.

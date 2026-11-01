@@ -117,6 +117,10 @@ h2{font-size:var(--fs-h2);font-weight:600}
 .dots > span::before{content:"·";position:absolute;left:calc(-1 * var(--dot));width:var(--dot);text-align:center;color:var(--muted)}
 
 /* Sticky toolbar: row 1 mission settings, row 2 table options */
+/* The toolbar sticks only while it's needed: through the tables and the simulator, then it scrolls away before Nerd
+   Stuff (a sticky element sticks only inside its parent) and comes back when you scroll up */
+.stick-span{display:grid;gap:20px}
+.stick-span > *{min-width:0}
 .controls{position:sticky;top:env(safe-area-inset-top, 0px);z-index:8;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:10;background:var(--bg)}
 .tb-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
@@ -265,7 +269,7 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 .summary b,.card-foot b,.hero .stats b,.reward-stats b{font-size:var(--fs-inline)}
 /* A value's note, e.g. "(1.2 years)", is ordinary text again */
 .summary b .aft,.card-foot b .aft{font-size:calc(1em / var(--inline-k));font-weight:400}
-.scroll{overflow-x:auto}
+.scroll{overflow-x:auto;overflow-y:hidden}  /* sideways only: a scroll box would otherwise scroll a pixel or two up and down too */
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 /* Tier tables share one column plan (a <colgroup> from render) with fixed layout, so every tier's columns line
    up and long names wrap instead of widening a table. Only the item column flexes, down to --name-w (narrower
@@ -284,7 +288,7 @@ td.name{font-weight:700}
 /* Keep the item column pinned while wide tables scroll sideways */
 th:first-child,td.name{position:sticky;left:0;z-index:1;background:var(--surface)}
 /* While a table is scrolled sideways, a hairline and a soft shadow mark where the pinned item column overlaps */
-.scroll th:first-child::after,.scroll td.name::after,.scroll thead tr.band td:first-child::after{content:"";position:absolute;top:0;bottom:-1px;right:-8px;width:8px;
+.scroll th:first-child::after,.scroll td.name::after,.scroll thead tr.band td:first-child::after{content:"";position:absolute;top:0;bottom:0;right:-8px;width:8px;
   pointer-events:none;opacity:0;transition:opacity .15s ease;border-left:1px solid var(--line);background:linear-gradient(90deg, color-mix(in srgb, var(--fg) 9%, transparent), transparent)}
 .scroll.scrolled th:first-child::after,.scroll.scrolled td.name::after,.scroll.scrolled thead tr.band td:first-child::after{opacity:1}
 .item{display:flex;align-items:center;gap:8px}
@@ -403,11 +407,11 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 .float-dock.show .float-reroll{opacity:1;visibility:visible;transform:none;transition:opacity .25s ease,transform .25s ease}
 /* While flying between the page and the corner, the copy is fully shown and moved only by its animation */
 .float-dock .float-reroll.fly{opacity:1;visibility:visible;transition:none}  /* beats the show/hide transitions */
-/* "New drop data is ready": a small note at the bottom left while an update waits to be applied */
+/* "Updated": a brief note at the bottom left after the page reloaded into a new version */
 .update-note{position:fixed;left:max(16px, env(safe-area-inset-left, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:20;
   background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:var(--fs-text);
-  box-shadow:0 8px 24px rgba(0,0,0,.2)}
-.update-note .lede-link{color:var(--accent);font-weight:700;margin-left:4px}
+  box-shadow:0 8px 24px rgba(0,0,0,.2);transition:opacity .4s ease}
+.update-note.gone{opacity:0}
 /* Install-as-an-app panel (PWA build) and the intro link that reopens it */
 .lede-link{font:inherit;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .lede-link:hover{color:var(--fg)}
@@ -520,6 +524,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
     <div class="card-foot" id="star-progress"></div>
   </section>
 
+  <div class="stick-span">
   <div class="controls" id="controls" role="region" aria-label="Mission settings">
     <button type="button" class="tb-toggle" id="tb-toggle" aria-expanded="false" aria-controls="tb-mission">
       <span class="sr-only" id="tb-summary">Mission settings</span>
@@ -625,6 +630,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
     <ul class="reward-list" id="reward-list" aria-label="Items received"></ul>
     <div class="float-dock" id="float-dock" aria-hidden="true"><button type="button" class="linkbtn fab float-reroll" id="reroll-float" tabindex="-1">Relaunch</button></div>
   </section>
+  </div>
 
   <section class="notes" aria-labelledby="h-notes">
     <h2 id="h-notes">Nerd Stuff</h2>
@@ -647,7 +653,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
     <p>Sources: drop counts from Menno's <a href="https://wasmegg-carpet.netlify.app/rockets-tracker/" target="_blank" rel="noopener">drop data tool</a> as published by the <a href="https://wasmegg-carpet.netlify.app/artifact-explorer/" target="_blank" rel="noopener">wasmegg-carpet artifact explorer</a>; mission parameters, item data, and images from <a href="https://github.com/carpetsage/egg" target="_blank" rel="noopener">carpetsage/egg</a> and <a href="https://github.com/carpetsage/eggincassets" target="_blank" rel="noopener">carpetsage/eggincassets</a>; theme icons from <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC License); fonts Chakra Petch and Atkinson Hyperlegible (SIL Open Font License).</p>
     <p>Version __APP_VERSION__ · Data updated <span id="data-date"></span> · Not affiliated with Auxbrain.</p>
   </footer>
-  <div class="update-note" id="update-note" role="status" hidden>New drop data is ready. <button type="button" class="lede-link" id="update-reload">Reload</button></div>
+  <div class="update-note" id="update-note" role="status" hidden></div>
 </div>
 
 <script>
@@ -700,7 +706,7 @@ function effectiveTarget(){
 const TGT = {}, tgtLoading = {};
 let replaced = false;
 function loadTargets(id){
-  if (replaced) { location.reload(); return new Promise(() => {}); }
+  if (replaced) { reloadNow(); return new Promise(() => {}); }
   return tgtLoading[id] ||= fetch(`targeted/${id}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(d => { TGT[id] = d; }, err => { delete tgtLoading[id]; throw err; });
 }
@@ -1893,8 +1899,44 @@ function renderReward(){
 /* Offline and updates. The service worker keeps the whole app (data included) on the device, so it opens and
    works without a connection. It looks for a new version when the app comes back to the foreground and hourly
    while it's open; offline, the check just fails and the current version carries on. A new version only takes
-   over once it has downloaded completely. Then the page reloads into it the next time it goes to the background
-   (settings are saved), and meanwhile a small note offers to reload now. */
+   over once it has downloaded completely. Then the page reloads into it by itself at the first quiet moment (no
+   taps, keys, or scrolling for QUIET_MS, no list open, no slider held, no tooltip up) or as soon as it goes to the
+   background. Settings are saved and the view is kept, and a brief note says it was updated. */
+const QUIET_MS = 2000, PLACE_KEY = "mission-odds-updated";  // sessionStorage: where you were, for after the reload
+function reloadNow(){
+  try { sessionStorage.setItem(PLACE_KEY, JSON.stringify({ y: scrollY, view: pickAnchor() })); } catch (e) {}
+  location.reload();
+}
+let quietTimer = 0;
+function reloadWhenQuiet(){
+  clearTimeout(quietTimer);
+  quietTimer = setTimeout(() => {
+    const tip = $("tip"), busy = document.querySelector(".dd-list:not([hidden])") || document.body.classList.contains("dragging") || (tip && !tip.hidden);
+    if (busy) reloadWhenQuiet(); else reloadNow();
+  }, QUIET_MS);
+}
+for (const ev of ["pointerdown", "keydown", "wheel", "touchstart", "scroll"])
+  addEventListener(ev, () => { if (replaced) reloadWhenQuiet(); }, { capture: true, passive: true });
+// After an update's reload: back to where you were (once the tables are built), then say so briefly
+let savedPlace = null;
+try { savedPlace = JSON.parse(sessionStorage.getItem(PLACE_KEY)); sessionStorage.removeItem(PLACE_KEY); } catch (e) {}
+if (savedPlace) history.scrollRestoration = "manual";
+function restorePlace(){
+  if (!savedPlace) return;
+  const back = () => {
+    const el = savedPlace.view && anchorEl(savedPlace.view.key);
+    if (el) { scrollBy(0, el.getBoundingClientRect().top - savedPlace.view.top); holdView(savedPlace.view); } else scrollTo(0, savedPlace.y);
+    const note = $("update-note");
+    note.textContent = `Ship Odditer updated · drop data from ${$("data-date").textContent}`;
+    note.hidden = false;
+    const fade = () => setTimeout(() => { note.classList.add("gone"); setTimeout(() => { note.hidden = true; note.classList.remove("gone"); }, 400); }, 4000);
+    if (document.hidden) document.addEventListener("visibilitychange", fade, { once: true }); else fade();  // shown when you come back
+  };
+  const t0 = performance.now();
+  (function wait(){  // a saved target loads its file before the tables appear
+    if (document.querySelector("#tiers > section.tier") || performance.now() - t0 > 5000) back(); else requestAnimationFrame(wait);
+  })();
+}
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
     const check = () => reg.update().catch(() => {});
@@ -1905,10 +1947,9 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!controlled) { controlled = true; return; }  // the first install, not an update
     replaced = true;
-    if (document.hidden) { location.reload(); return; }
-    $("update-note").hidden = false;
-    $("update-reload").addEventListener("click", () => location.reload());
-    document.addEventListener("visibilitychange", () => { if (document.hidden) location.reload(); });
+    if (document.hidden) { reloadNow(); return; }
+    reloadWhenQuiet();
+    document.addEventListener("visibilitychange", () => { if (document.hidden) reloadNow(); });
   });
 }
 
@@ -1925,7 +1966,7 @@ fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.js
   // The footer's date comes from the data itself, so it can't fall out of step
   const when = new Date(d.dataUpdated + "T00:00:00");
   if (!isNaN(when)) $("data-date").textContent = when.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  wire(); render();
+  wire(); render(); restorePlace();
   (window.requestIdleCallback || (f => setTimeout(f, 300)))(preloadIcons);
 }).catch(err => {
   console.error(err);

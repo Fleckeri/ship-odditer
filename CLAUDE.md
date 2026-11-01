@@ -7,7 +7,7 @@ Context for anyone (human or Claude) continuing development. Read this before ch
 **Ship Odditer** ("Egg Inc. Mission Drop Calculator") is a single-page web app. For any Egg, Inc. spaceship,
 mission length (Short / Standard / Extended), target, and star level, it shows the chance of getting each
 artifact, stone, and ingredient from one mission, by rarity, plus a mission reward simulator. All maths runs in
-the browser from pre-built data files. Version 1.1.0 (Nov 2026); see `CHANGELOG.md`.
+the browser from pre-built data files. Version 1.2.0 (Nov 2026); see `CHANGELOG.md`.
 
 It ships one way: an **installable, offline-capable PWA** at <https://fleckeri.github.io/ship-odditer/>, built and
 deployed by GitHub Actions (`.github/workflows/deploy.yml`; Pages source "GitHub Actions"). The workflow fetches
@@ -155,7 +155,7 @@ download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails 
 zerog (0-10), ftl (0-60), odds (1-99), sort ("tier"|"rarity")`. Saved to `localStorage["mission-odds"]`
 (debounced; flushed on `pagehide`) and **validated field by field on load** (old or damaged saves fall back to
 defaults). Theme: `localStorage["mission-odds-theme"]`. Dismissed install panel:
-`localStorage["mission-odds-install-dismissed"]`. Keep these key names, or existing users lose their settings.
+`localStorage["mission-odds-install-dismissed"]`. After an update's reload, `sessionStorage["mission-odds-updated"]` briefly holds your place. Keep these key names, or existing users lose their settings.
 
 **Targets.** `state.target` is what the user picked; `curTgt` (set at the top of `render()`) is the target in
 effect: null on pre-FTL ships or when the mission has no data for it, so the choice survives switching ships.
@@ -267,7 +267,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   art mostly points down-right).
 - **Sliders.** Zero-G and FTL purple (epic research). The Odds slider (1-99%, default 50%) is one solid colour that
   shifts blue → purple → orange (oklch mix) with its value.
-- **Toolbar.** One sticky toolbar: row 1 Ship, Length, Target, Zero-G, FTL, Odds (one line from 1280 px, even
+- **Toolbar.** One sticky toolbar, sticky only through the tables and simulator (`.stick-span` wraps them; it
+  scrolls away before Nerd Stuff and comes back on the way up): row 1 Ship, Length, Target, Zero-G, FTL, Odds (one line from 1280 px, even
   with the longest target name; wraps below that); row 2 Stars, Items, Rarity. Kept compact for vertical space:
   the Length button shows only the length, slider tracks are 72 px, the page is at most 1280 px wide. On phones
   and short landscape screens (same breakpoint as the icon-only tables), everything folds behind one summary
@@ -319,8 +320,11 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   fails. A failed install leaves the current version in charge. Each update check costs a ~400-byte 304 for `sw.js`
   (Chrome revalidates with `If-None-Match`; checked Nov 2026). The page registers it with `updateViaCache: "none"` and checks for updates when it returns to the
   foreground and hourly. When a new version takes over (`controllerchange`, not the first install), the page
-  reloads the next time it's hidden, and meanwhile shows "New drop data is ready · Reload" (`#update-note`). Until
-  then the open page runs its old code but is served the new version's files, so it must not load anything new:
+  reloads into it by itself (`reloadNow`): at once if hidden, otherwise at the first quiet moment (`QUIET_MS`, 2 s
+  with no taps, keys, wheel, or scrolling, no dropdown open, no slider held, no tooltip up). It saves where you
+  were (`pickAnchor`, else `scrollY`) in `sessionStorage["mission-odds-updated"]`; after the reload
+  `restorePlace` scrolls back once the tables exist and shows "Ship Odditer updated · drop data from …"
+  (`#update-note`) for 4 s, starting when the page is visible. Until the reload the open page runs its old code but is served the new version's files, so it must not load anything new:
   `loadTargets` reloads into the new version instead (`replaced`; the chosen target survives the reload). It only
   handles same-origin GET requests.
 - **Changing a data file's format? Change its path too.** A page that was open when the new version took over may
@@ -344,8 +348,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   pre-FTL disables); rolling numbers stay inside their cells; launch counter; floating Relaunch flies; damaged
   saved settings are repaired; install panel per browser (shown, dismissed, reopened, hidden where impossible,
   "Installed" when standalone); PWA installable, service worker in control, offline load incl. targeted data;
-  updates (a new deploy is noticed and announced, downloads only the changed files, is applied when the page goes to
-  the background, and works offline; a target picked after a takeover reloads into the new version).
+  updates (a new deploy downloads only the changed files, reloads by itself at a quiet moment keeping your place
+  and saying so, and works offline; a target picked after a takeover reloads into the new version).
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.
