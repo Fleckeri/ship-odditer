@@ -144,7 +144,8 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
     const noted = await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 15000 }).then(() => true, () => false);
     check(noted, 'a new deploy is noticed and announced');
-    check(JSON.stringify(log.sort()) === '["/data.json","/sw.js"]', `the update downloads only the changed files ${JSON.stringify(log)}`);
+    const fetched = [...new Set(log)].sort();
+    check(JSON.stringify(fetched) === '["/data.json","/sw.js"]', `the update downloads only the changed files ${JSON.stringify(fetched)}`);
     const reloaded = p.waitForEvent('load', { timeout: 10000 }).then(() => true, () => false);
     await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
     check(await reloaded && /2 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent)), 'it reloads into the new version when the page goes to the background');

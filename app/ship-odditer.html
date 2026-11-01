@@ -631,12 +631,10 @@ const level = s => {
 };
 // How many times this item/rarity ("all" = any rarity) was logged at this level. Rows are counts per rarity with
 // trailing zeros left out, so [12, 3] means 12 common and 3 rare.
-function seen(id, r, s){
-  const L = level(s), p = L && L.d[id]; if (!p) return 0;
-  return r === "all" ? p.reduce((a, b) => a + b, 0) : p[r] || 0;
-}
+const count = (L, id, r) => { const p = L && L.d[id]; return !p ? 0 : r === "all" ? p.reduce((a, b) => a + b, 0) : p[r] || 0; };
+const seen = (id, r, s) => count(level(s), id, r);
 // Share of all drops (0-1) that are this item in this rarity, from the drop data
-function share(id, r, s){ const L = level(s); return L ? seen(id, r, s) / L.n : 0; }
+function share(id, r, s){ const L = level(s); return L ? count(L, id, r) / L.n : 0; }
 // Expected copies per launch: share × capacity (the same rate the wasmegg artifact explorer shows)
 const lam = (id, r, s) => share(id, r, s) * capAt(s);
 // A launch returns `capacity` items, each drawn independently by these shares, so the chance of
