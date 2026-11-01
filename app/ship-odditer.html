@@ -629,12 +629,14 @@ const level = s => {
   const T = TGT[ship().id], byStar = T && T[state.len];
   return byStar && byStar[s] ? byStar[s][curTgt] : undefined;
 };
-// Share of all drops (0-1) that are this item in this rarity ("all" = any rarity), from the drop data
-function share(id, r, s){
-  const L = level(s); if (!L) return 0;
-  const p = L.d[id]; if (!p) return 0;
-  return (r === "all" ? p[0] + p[1] + p[2] + p[3] : p[r]) / 1e6;
+// How many times this item/rarity ("all" = any rarity) was logged at this level. Rows are counts per rarity with
+// trailing zeros left out, so [12, 3] means 12 common and 3 rare.
+function seen(id, r, s){
+  const L = level(s), p = L && L.d[id]; if (!p) return 0;
+  return r === "all" ? p.reduce((a, b) => a + b, 0) : p[r] || 0;
 }
+// Share of all drops (0-1) that are this item in this rarity, from the drop data
+function share(id, r, s){ const L = level(s); return L ? seen(id, r, s) / L.n : 0; }
 // Expected copies per launch: share × capacity (the same rate the wasmegg artifact explorer shows)
 const lam = (id, r, s) => share(id, r, s) * capAt(s);
 // A launch returns `capacity` items, each drawn independently by these shares, so the chance of
@@ -643,9 +645,7 @@ const lam = (id, r, s) => share(id, r, s) * capAt(s);
 // for small early ships, where each item takes a large share, it is noticeably more accurate.
 const lamEff = (id, r, s) => { const q = share(id, r, s); return q >= 1 ? Infinity : -capAt(s) * Math.log1p(-q); };
 const P = l => 1 - Math.exp(-l);
-// How many times this item/rarity was actually seen at this level; under 5 sightings the rate is rough
-function seen(id, r, s){ const L = level(s); return L ? Math.round(share(id, r, s) * L.n) : 0; }
-const ROUGH = 5;
+const ROUGH = 5;  // under 5 sightings the rate is rough
 const SMALL_SAMPLE = 200000;  // items logged; below this the page warns that the sample is small
 const WARN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>`;
 const warnBox = (title, body) => `<h2 class="warn-title">${WARN_ICON}${title}</h2><p>${body}</p>`;

@@ -42,20 +42,22 @@ jobs:
           echo "upstream $upstream, live $(echo "$live" | tr -d '\n '), skip=$skip"
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch upstream data and build
-        if: steps.check.outputs.skip != 'true'
-        run: bash tools/update_data.sh
-
       - uses: actions/setup-node@v7
         if: steps.check.outputs.skip != 'true'
         with:
           node-version: 22
           cache: npm
 
-      - name: Test
+      # npm ci first: the build minifies the page with esbuild
+      - name: Fetch upstream data and build
         if: steps.check.outputs.skip != 'true'
         run: |
           npm ci
+          bash tools/update_data.sh
+
+      - name: Test
+        if: steps.check.outputs.skip != 'true'
+        run: |
           npx playwright install --with-deps chromium
           node tests/smoke.js
 

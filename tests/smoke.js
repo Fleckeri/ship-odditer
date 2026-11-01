@@ -29,11 +29,11 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
       check(await p.evaluate(() => !document.getElementById('tip').hidden && /Capacity/.test(document.getElementById('tip').textContent)), 'mission card labels show their tooltips');
       // Targeting: pick Book of Basan from the dropdown on a Henliner extended 8★; its share should rise
       await p.evaluate(() => { state.ship = 'atreggies'; state.len = 2; state.star = 8; state.target = 'none'; render(); });
-      const untargeted = await p.evaluate(() => level(8).d['book-of-basan-1'].reduce((a, b) => a + b, 0));
+      const untargeted = await p.evaluate(() => Math.round(share('book-of-basan-1', 'all', 8) * 1e6));
       await p.click('#tgt-dd .dd-btn');
       await p.click('#tgt-dd li:has-text("Book of Basan")');
       await p.waitForFunction(() => curTgt === '10', null, { timeout: 10000 });
-      const t = await p.evaluate(() => [level(8).d['book-of-basan-1'].reduce((a, b) => a + b, 0), document.getElementById('hero-kicker').textContent, document.querySelector('#tgt-dd .dd-val').textContent]);
+      const t = await p.evaluate(() => [Math.round(share('book-of-basan-1', 'all', 8) * 1e6), document.getElementById('hero-kicker').textContent, document.querySelector('#tgt-dd .dd-val').textContent]);
       check(t[0] > untargeted * 1.5 && /targeting Book of Basan/.test(t[1]) && t[2] === 'Book of Basan', `targeting raises the target's share (${untargeted} → ${t[0]} ppm) and shows it`);
       // The target's rows are marked, each tier says how many launches to see it, and an unobtainable tier says so
       const marks = await p.evaluate(() => [...document.querySelectorAll('#tiers tr.tgt')].map(tr => [tr.dataset.id, !!tr.querySelector('.tgt-mark')]));
@@ -132,15 +132,19 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     const fs = require('fs'), os = require('os'), path = require('path');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'odditer-update-'));
     fs.cpSync(path.join(__dirname, '..', 'docs'), dir, { recursive: true });
-    const srv2 = await serve(dir), ctx = await b.newContext(), p = await ctx.newPage();
+    const log = [], srv2 = await serve(dir, log), ctx = await b.newContext(), p = await ctx.newPage();
     await p.goto(srv2.url); await p.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 });
-    // "Deploy" a new version: new data date, new service-worker version
+    // "Deploy" a new version: new data date, new service-worker version and data.json hash
     const data = JSON.parse(fs.readFileSync(path.join(dir, 'data.json'))); data.dataUpdated = '2030-01-02';
-    fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(data));
-    const swPath = path.join(dir, 'sw.js'); fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8').replace(/const VERSION = "\w+"/, 'const VERSION = "test-update"'));
+    const dataText = JSON.stringify(data), dataHash = require('crypto').createHash('sha256').update(dataText).digest('hex').slice(0, 16);
+    fs.writeFileSync(path.join(dir, 'data.json'), dataText);
+    const swPath = path.join(dir, 'sw.js'); fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8')
+      .replace(/const VERSION = "\w+"/, 'const VERSION = "test-update"').replace(/"data\.json": "\w+"/, `"data.json": "${dataHash}"`));
+    log.length = 0;
     await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
     const noted = await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 15000 }).then(() => true, () => false);
     check(noted, 'a new deploy is noticed and announced');
+    check(JSON.stringify(log.sort()) === '["/data.json","/sw.js"]', `the update downloads only the changed files ${JSON.stringify(log)}`);
     const reloaded = p.waitForEvent('load', { timeout: 10000 }).then(() => true, () => false);
     await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
     check(await reloaded && /2 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent)), 'it reloads into the new version when the page goes to the background');

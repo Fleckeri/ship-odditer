@@ -40,7 +40,8 @@ served, it would be ~3× bigger, ~27% more to download, and slower to parse.
 
 ## Build pipeline
 
-Needs Python 3.10+ with Pillow and NumPy (SciPy only for `fit_egg.py`), and Node 18+ with Playwright for tests.
+Needs Python 3.10+ with Pillow and NumPy (SciPy only for `fit_egg.py`), and Node 18+: `npm ci` installs esbuild
+(the build minifies the page's CSS and script with it) and Playwright for tests.
 
 ```bash
 tools/update_data.sh            # fetch upstream (sparse, blobless clones in vendor/), build data, icons, and docs/
@@ -64,7 +65,7 @@ the build. The smoke test gates every deploy, so bad upstream data can't break t
 majors as of Nov 2026 (checkout v7, setup-node v7, upload-pages-artifact v5, deploy-pages v5). A `keepalive` job
 re-enables the workflow through the API on every scheduled run (`actions: write`, no commits), because GitHub
 turns off schedules in public repos after 60 days without repository activity and data refreshes make no commits. Data isn't
-committed because it changes daily (~20 MB per refresh would bloat the repo); upstream's history keeps every
+committed because it changes daily (~8 MB of generated JSON per refresh would bloat the repo); upstream's history keeps every
 snapshot.
 
 **Releasing.** Bump `version` in `package.json` (and `package-lock.json`), add a `CHANGELOG.md` entry, commit,
@@ -72,7 +73,9 @@ tag `vX.Y.Z`, push. The footer shows the new version after the deploy. Don't `gi
 `vendor/egg` clone (it downloads every blob); use `git show HEAD:<path>`.
 
 `build_pwa.py` writes `index.html` (skeleton, meta, link-preview and SEO tags, CSP, service-worker registration),
-`manifest.webmanifest`, `sw.js`, `sitemap.xml`, minified data, icons, fonts, and `.nojekyll`.
+`manifest.webmanifest`, `sw.js`, `sitemap.xml`, minified data, icons, fonts, and `.nojekyll`. The page's CSS and
+script are minified with esbuild (top-level names kept, so tests can reach `state`, `render()` and the rest); the
+smoke test and pixel-identical screenshots confirmed the output matches the unminified page (Nov 2026).
 
 ## Data sources (and what each field means)
 
@@ -110,15 +113,16 @@ items: { <itemId>: { n: name, f: family, t: tier 1-4, c: "art"|"stone"|"ing", i:
                      e: [[rarity 0-3, effect text, slots|null]...], fe: family effect } }
 ships: [ { id, name, icon, ftl: bool, maxStars, req: [per-star launch-point increments],
            missions: [ { id, label: "Short"|"Standard"|"Extended", seconds, cap, capBump, qMin, qMax, qBump,
-                         levels: { "<star>": { n: totalDrops, d: { <itemId>: [ppm common, rare, epic, legendary] },
+                         levels: { "<star>": { n: totalDrops, d: { <itemId>: [count common, rare, epic, legendary] },
                                                tn: { <afxId>: targeted totalDrops } } } } ] } ]
 targets: { <afxId>: { n: name, k: "art"|"stone"|"ing", i: itemId whose icon to show,
                        it: { "<tier>": itemId } (every tier with this afx id, even ones that never drop) } }
 ```
 
 `targets/<ship>.json` is `{ "<mission index 0-2>": { "<star>": { "<afxId>": { n, d } } } }`, the same `{n, d}`
-shape as an untargeted level. `d` values are parts per million of all recorded drops at that level (4
-significant figures). `build_data.py` fails if item text contains `< > & "` (it's written into the page as HTML).
+shape as an untargeted level. `d` values are how many of each rarity were logged at that level, with trailing
+zero rarities left out (`[12, 3]` = 12 common, 3 rare): exact, and much smaller than shares (about 30% less to
+download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails if item text contains `< > & "` (it's written into the page as HTML).
 
 ## Formulas (verified against carpetsage/egg `lib/missions.ts` on 31 Oct 2026)
 
@@ -129,7 +133,7 @@ significant figures). `build_data.py` fails if item text contains `< > & "` (it'
   short / standard / extended. "From scratch" runs = `ceil(cumulative / pts)`; "From N★" = `ceil(req[N] / pts)`
   (the mission-list tool's `launchesToStar`).
 - **Days** use rounds of three launches: `ceil(launches / 3) × duration` (like `timeToStar`).
-- **Expected copies per launch** `lam = share × capacity`, `share = ppm / 1e6` (the rate the explorer shows).
+- **Expected copies per launch** `lam = share × capacity`, `share = count / n` (the rate the explorer shows).
 - **Per-launch chance** uses the exact fixed-capacity model: a launch draws `capacity` items independently, so
   `P(≥1) = 1 − (1 − share)^capacity`, implemented as `lamEff = −capacity · ln(1 − share)`, `P = 1 − e^(−lamEff)`.
   The explorer's optimizer uses the Poisson shortcut `1 − e^(−lam)`; they differ a lot for tiny early ships
@@ -274,10 +278,14 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   must add it to `connect-src` deliberately.
 - **Data into HTML.** Item text from upstream goes into `innerHTML`; `build_data.py` refuses text with HTML
   characters. User input never reaches HTML (settings are validated; the target id is checked against the data).
-- **Offline and updates.** The service worker precaches every file (cache name = hash of them all) and serves
-  cache-first, so the app works offline. It installs a new version only after downloading every file fresh
-  (`cache: "reload"`, so a stale HTTP-cached file can't sneak in); a failed download leaves the current version in
-  charge. The page registers it with `updateViaCache: "none"` and checks for updates when it returns to the
+- **Offline and updates.** The service worker precaches every file and serves cache-first, so the app works
+  offline. `PRECACHE` maps each file to its hash (first 16 hex digits of SHA-256); the cache name is a hash of
+  those. Installing a version copies unchanged files from the old cache and downloads only the rest, so a daily data
+  update fetches `sw.js`, `data.json`, and `targets/`, not icons or fonts. Downloads use `cache: "no-cache"` (the
+  server is always asked, so a stale HTTP-cached file can't sneak in, but a file the page just loaded costs a 304
+  instead of a second download), and every file must match its hash, so a download that catches a deploy half-way
+  fails. A failed install leaves the current version in charge. Each update check costs a ~400-byte 304 for `sw.js`
+  (Chrome revalidates with `If-None-Match`; checked Nov 2026). The page registers it with `updateViaCache: "none"` and checks for updates when it returns to the
   foreground and hourly. When a new version takes over (`controllerchange`, not the first install), the page
   reloads the next time it's hidden, and meanwhile shows "New drop data is ready · Reload" (`#update-note`). It
   only handles same-origin GET requests.
@@ -297,7 +305,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   pre-FTL disables); rolling numbers stay inside their cells; launch counter; floating Relaunch flies; damaged
   saved settings are repaired; install panel per browser (shown, dismissed, reopened, hidden where impossible,
   "Installed" when standalone); PWA installable, service worker in control, offline load incl. targeted data;
-  updates (a new deploy is noticed and announced, applied when the page goes to the background, and works offline).
+  updates (a new deploy is noticed and announced, downloads only the changed files, is applied when the page goes to
+  the background, and works offline).
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.

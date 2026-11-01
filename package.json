@@ -16,6 +16,7 @@
     "bench": "node tests/bench.js top"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "^1.49.1"
   }
 }

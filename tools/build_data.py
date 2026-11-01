@@ -69,11 +69,6 @@ def dump(obj, path):
     with open(path, "w") as fh:
         fh.write(s + "\n")
 
-def sig(x, n=4):
-    if x == 0:
-        return 0
-    return float(f"{x:.{n}g}")
-
 ships_out = []
 used_items = set()
 used_targets = set()
@@ -81,15 +76,19 @@ targets_out = {}  # {ship id: per-ship targeted shares}
 ftl_on = False
 
 def shares(t):
-    """{n: total drops, d: {itemId: [ppm common, rare, epic, legendary]}} for one target's drop counts."""
+    """{n: total drops, d: {itemId: [count common, rare, epic, legendary]}} for one target's drop counts.
+    Raw counts are exact and much smaller than shares; trailing zero rarities are dropped ([12, 3] = 12 common,
+    3 rare). The page divides by n."""
     total = t["totalDrops"]
     rows = {}
     for it in t["items"]:
         if it["itemId"] not in items:
             continue
-        ppm = [sig(c / total * 1e6) for c in it["counts"]]
-        if any(ppm):
-            rows[it["itemId"]] = ppm
+        counts = list(it["counts"])
+        while counts and not counts[-1]:
+            counts.pop()
+        if counts:
+            rows[it["itemId"]] = counts
             used_items.add(it["itemId"])
     return {"n": total, "d": rows}
 
