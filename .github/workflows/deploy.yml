@@ -1,0 +1,90 @@
+# Build the site from the latest upstream drop data, test it, and deploy it to GitHub Pages.
+# Runs on every push to main, daily (upstream refreshes its data once a day), and on demand from the Actions tab.
+# Requires: Settings → Pages → Build and deployment → Source: GitHub Actions.
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 7 * * *"   # daily, after carpetsage/egg's own daily data update
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04   # pinned: ubuntu-latest moves to a new release, which Playwright may not support yet
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # A scheduled run only rebuilds when something changed: new upstream data, or new code since the last deploy
+      - name: Check for changes
+        id: check
+        run: |
+          upstream=$(git ls-remote https://github.com/carpetsage/egg HEAD | cut -f1)
+          live=$(curl -fsSL "https://fleckeri.github.io/ship-odditer/version.json" || echo '{}')
+          skip=$(LIVE="$live" UPSTREAM="$upstream" python3 -c '
+          import json, os
+          try: v = json.loads(os.environ["LIVE"])
+          except ValueError: v = {}
+          print("true" if v.get("upstream") == os.environ["UPSTREAM"] and v.get("commit") == os.environ["GITHUB_SHA"] else "false")')
+          if [ "${{ github.event_name }}" != "schedule" ]; then skip=false; fi
+          echo "upstream $upstream, live $(echo "$live" | tr -d '\n '), skip=$skip"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch upstream data and build
+        if: steps.check.outputs.skip != 'true'
+        run: bash tools/update_data.sh
+
+      - uses: actions/setup-node@v7
+        if: steps.check.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Test
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          node tests/smoke.js
+
+      - uses: actions/upload-pages-artifact@v5
+        if: steps.check.outputs.skip != 'true'
+        with:
+          path: docs
+
+  # GitHub turns off scheduled workflows in public repos after 60 days without repository activity, and data
+  # refreshes make no commits. Re-enabling this workflow through the API on every scheduled run keeps the daily
+  # refresh going without commits (the approach of gautamkrishnar/keepalive-workflow's API mode).
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Keep the daily schedule enabled
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/deploy.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
