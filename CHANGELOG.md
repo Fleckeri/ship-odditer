@@ -2,6 +2,30 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.1.0 (2026-11-01)
+
+A better fit on phones, and consistent text everywhere.
+
+### Text
+
+- One consistent set of text sizes across the page, and no text enlarged by iPhone Safari in landscape.
+- Numbers within sentences are sized to sit evenly with the text around them; ship and item names with icons,
+  rarity words, and Nerd Stuff terms match the case, size, and weight of their sentence; the "·" separators are evenly spaced.
+- Where the target can't drop, its tier now says so plainly: "TARGET never drops from this mission".
+- ★, →, ≥, ≈, and ᴇ come from a small font of our own, so they look the same on every device.
+
+### Phones and small screens
+
+- Tier tables show just the item icons, leaving the width for the numbers. Tap a row for its name and details.
+- The whole toolbar folds behind one summary button that shows every setting as a small pill (just the icon,
+  where there is one, on phones). Stars, Items, and Rarity are dropdowns there, so nothing scrolls sideways.
+- Each slider gets its own full-width row in the open toolbar, so they're easy to drag. The open toolbar is a
+  drawer hanging from its button.
+- When a table scrolls sideways, a divider marks the edge of the pinned item column.
+- The target's row in the icon-only column keeps its green highlight, without the crosshair.
+- Dropdown lists stay on screen: they line up with the right edge when they'd run off it, and stop at the
+  bottom of the window.
+
 ## 1.0.0 (2026-11-01)
 
 First public release, at <https://fleckeri.github.io/ship-odditer/>.

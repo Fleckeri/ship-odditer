@@ -22,6 +22,24 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(await p.$eval('th .odds-txt', e => e.textContent) === '90', `${name}: odds slider updates the column headers`);
     await p.evaluate(() => document.getElementById('star-0').click()); await p.waitForTimeout(1200);
     check(await p.evaluate(() => state.star === 0 && document.querySelector('[data-k="h|s"]').textContent === '0'), `${name}: star buttons update the mission card`);
+    if (name !== 'desktop') {
+      // Compact toolbar: everything folds behind the summary button, the table options are dropdowns in it, and
+      // the tables show just the item icons
+      await p.evaluate(() => { Object.assign(state, { ship: 'atreggies', len: 2, star: 8, target: 'none', cat: 'art', rar: 'all' }); render(); scrollTo(0, 0); });
+      const c = await p.evaluate(() => [getComputedStyle(document.querySelector('.tb-table')).display, document.querySelector('#tiers td.name').getBoundingClientRect().width, document.querySelector('#tiers td.name .item-n').getBoundingClientRect().width]);
+      check(c[0] === 'none' && c[1] <= 60 && c[2] <= 1, `${name}: table options folded away, item column is just the icon (${Math.round(c[1])} px)`);
+      await p.click('#tb-toggle');
+      await p.click('#stars-dd .dd-btn'); await p.click('#stars-dd li:has-text("3★")');
+      await p.click('#rar-dd .dd-btn'); await p.click('#rar-dd li:has-text("Legendary")');
+      await p.click('#cats-dd .dd-btn'); await p.click('#cats-dd li:has-text("Stones")');
+      const d = await p.evaluate(() => [state.star, state.cat, state.rar, document.getElementById('rar-dd-group').hidden, document.getElementById('tb-summary').textContent,
+        [...document.querySelectorAll('#tb-pills .tb-pill')].map(e => e.innerText.trim() || (e.querySelector('img') ? 'icon' : 'dot'))]);
+      check(d[0] === 3 && d[1] === 'stone' && d[2] === 3 && d[3] && /3 stars, Stones, Zero-G/.test(d[4]) && d[5].includes('3★') && d[5].length === 7,  // ship, length, stars, items, Zero-G, FTL, odds (no target; no rarity for stones)
+        `${name}: Stars, Items, and Rarity dropdowns work and every setting shows as a pill ${JSON.stringify(d)}`);
+      const fit = await p.evaluate(() => [...document.querySelectorAll('#tb-mission .tb-slider input')].every(i => i.getBoundingClientRect().width >= 100));
+      check(fit, `${name}: sliders have room (each at least 100 px wide)`);
+      await p.evaluate(() => { Object.assign(state, { cat: 'art', rar: 'all' }); render(); document.getElementById('tb-toggle').click(); });
+    }
     if (name === 'desktop') {
       // Self-hosted fonts load (no third-party requests), and the mission card labels explain themselves
       check(await p.evaluate(async () => { await document.fonts.ready; return document.fonts.check('700 16px "Chakra Petch"') && document.fonts.check('400 15px "Atkinson Hyperlegible"'); }), 'self-hosted fonts load');
@@ -35,11 +53,11 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
       await p.waitForFunction(() => curTgt === '10', null, { timeout: 10000 });
       const t = await p.evaluate(() => [Math.round(share('book-of-basan-1', 'all', 8) * 1e6), document.getElementById('hero-kicker').textContent, document.querySelector('#tgt-dd .dd-val').textContent]);
       check(t[0] > untargeted * 1.5 && /targeting Book of Basan/.test(t[1]) && t[2] === 'Book of Basan', `targeting raises the target's share (${untargeted} → ${t[0]} ppm) and shows it`);
-      // The target's rows are marked, each tier says how many launches to see it, and an unobtainable tier says so
+      // The target's rows are marked, each tier says how many launches to see it, and a tier where it never drops says so
       const marks = await p.evaluate(() => [...document.querySelectorAll('#tiers tr.tgt')].map(tr => [tr.dataset.id, !!tr.querySelector('.tgt-mark')]));
       check(marks.length > 0 && marks.every(([id, m]) => id.startsWith('book-of-basan-') && m), `target rows highlighted and marked ${JSON.stringify(marks)}`);
-      const lines = await p.evaluate(() => [...document.querySelectorAll('#tiers section.tier')].map(sec => [...sec.querySelectorAll('.summary span')].find(x => /chance of getting target/.test(x.textContent))?.textContent.replace(/\s+/g, ' ').trim() || ''));
-      check(lines.every(Boolean) && lines.some(l => /unobtainable/.test(l)), `each tier has a target line ${JSON.stringify(lines)}`);
+      const lines = await p.evaluate(() => [...document.querySelectorAll('#tiers section.tier')].map(sec => [...sec.querySelectorAll('.summary span')].find(x => /chance of getting target|target (never drops|doesn't drop)/i.test(x.textContent))?.textContent.replace(/\s+/g, ' ').trim() || ''));
+      check(lines.every(Boolean) && lines.some(l => /^Target never drops from this mission$/.test(l)), `each tier has a target line ${JSON.stringify(lines)}`);
       const k0 = await p.evaluate(() => document.querySelector('[data-k="t3|tgt"]').dataset.v);
       await p.evaluate(() => { const o = document.getElementById('zerog'); o.value = 0; o.dispatchEvent(new Event('input')); });
       await p.evaluate(() => document.querySelector('[data-k="t3|tgt"]').scrollIntoView());  // off-screen tables catch up when seen

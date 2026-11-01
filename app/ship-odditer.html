@@ -11,6 +11,10 @@
 @font-face{font-family:"Chakra Petch";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/chakra-petch-600-latin.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 @font-face{font-family:"Chakra Petch";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/chakra-petch-700-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
 @font-face{font-family:"Chakra Petch";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/chakra-petch-700-latin.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+/* Symbols neither font has (★ → ≥ ≈ ᴇ), drawn to Atkinson Hyperlegible's size and weights by tools/make_symbols_font.py,
+   so they look the same on every device instead of coming from whatever system font has them */
+@font-face{font-family:"Odditer Symbols";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/odditer-symbols-400.woff2) format("woff2");unicode-range:U+1D07, U+2192, U+2248, U+2265, U+2605}
+@font-face{font-family:"Odditer Symbols";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/odditer-symbols-700.woff2) format("woff2");unicode-range:U+1D07, U+2192, U+2248, U+2265, U+2605}
 /* Layout: one reading column: header, install panel, mission card (ship art + stats), one sticky two-row
    toolbar (mission settings, then table options), tier tables, reward simulator, Nerd Stuff, footer. */
 :root{
@@ -20,8 +24,16 @@
   --common-soft:#eef0f3; --rare-soft:#e4eefb; --epic-soft:#f0e8fa; --legend-soft:#fbf1dc;
   --heat0:#eef1f5; --warn:#a15c00; --warn-soft:#fff3df; --bad:#b42318; --bad-soft:#fdecea;
   --sb-thumb:#b9c3cf; --sb-track:#e9edf2;
-  --font-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --font-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-display:"Chakra Petch", "Odditer Symbols", "Segoe UI", system-ui, sans-serif;
+  --font-body:"Atkinson Hyperlegible", "Odditer Symbols", "Segoe UI", system-ui, sans-serif;
+  /* Type scale: every font size on the page is one of these (body text is 15px) */
+  --fs-micro:.7rem;    /* 11.2px: uppercase labels, column headers, pills (the table columns were sized for it) */
+  --fs-small:.8125rem; /* 13px: footnotes, notes in lists, tooltip tables */
+  --fs-text:.875rem;   /* 14px: captions, summaries, warnings, notes, tooltips */
+  --fs-body:.9375rem;  /* 15px: tables, lists, controls */
+  --fs-h3:1rem; --fs-h2:1.125rem; --fs-hero:1.5rem; --fs-h1:1.875rem;
+  --inline-k:.9; --fs-inline:calc(var(--inline-k) * 1em);  /* bold figures inside running text: at full size, bold
+                          figures look taller than the grey lowercase around them. Words keep the text's size. */
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
@@ -41,7 +53,7 @@
 :root[data-theme="light"]{color-scheme:light}
 
 /* Scrollbars follow the page theme, including the manual toggle */
-html{scrollbar-color:var(--sb-thumb) var(--sb-track)}
+html{scrollbar-color:var(--sb-thumb) var(--sb-track);-webkit-text-size-adjust:100%;text-size-adjust:100%}  /* no iOS text inflation in landscape */
 html.holding{overflow-anchor:none}  /* while the page keeps your place itself (see holdView) */
 /* Performance: blocks that are off screen are not laid out or painted until you scroll near them */
 #tiers > section.tier{content-visibility:auto;contain-intrinsic-size:auto 1000px}
@@ -49,19 +61,19 @@ html.holding{overflow-anchor:none}  /* while the page keeps your place itself (s
 .notes,.site-foot{content-visibility:auto;contain-intrinsic-size:auto 500px}
 .scroll,.dd-list{scrollbar-color:var(--sb-thumb) transparent;scrollbar-width:thin}
 
-body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:var(--fs-body);line-height:1.5}
 .wrap{max-width:1280px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:20px}
 h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:.01em}
-h1{font-size:1.9rem;font-weight:700}
-h2{font-size:1.15rem;font-weight:600}
-.lede{color:color-mix(in srgb, var(--fg) 78%, var(--bg));max-width:60ch;margin:14px 0 0;font-size:1.02rem;line-height:1.6;text-wrap:pretty}
-.lede-meta{margin:6px 0 0;font-size:.85rem;color:var(--muted)}
+h1{font-size:var(--fs-h1);font-weight:700}
+h2{font-size:var(--fs-h2);font-weight:600}
+.lede{color:color-mix(in srgb, var(--fg) 78%, var(--bg));max-width:60ch;margin:14px 0 0;font-size:var(--fs-h3);line-height:1.6;text-wrap:pretty}
+.lede-meta{margin:6px 0 0;font-size:var(--fs-small);color:var(--muted)}
 .lede-meta:not(:has(> :not([hidden]))){display:none}
-.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.label{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .dim{color:var(--muted)}
 .nw{white-space:nowrap}
 .star{color:var(--legend)}
-.t-rare{color:var(--rare);font-weight:700} .t-epic{color:var(--epic);font-weight:700} .t-legend{color:var(--legend);font-weight:700}
+.t-rare{color:var(--rare)} .t-epic{color:var(--epic)} .t-legend{color:var(--legend)}  /* rarity words in text: colour only */
 .r0{color:var(--common)} .r1{color:var(--rare)} .r2{color:var(--epic)} .r3{color:var(--legend)} .rA{color:var(--fg)}
 .ship-ico{height:1.25em;width:auto;max-width:1.6em;object-fit:contain;vertical-align:-.3em;margin-right:.3em}
 .shiptag{white-space:nowrap}
@@ -71,9 +83,9 @@ h2{font-size:1.15rem;font-weight:600}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .logo{width:3.6rem;height:3.6rem;flex:none}
 .brand-text{min-width:0}
-.subtitle{margin:2px 0 0;font-family:var(--font-display);font-size:.98rem;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.subtitle{margin:2px 0 0;font-family:var(--font-display);font-size:var(--fs-h3);font-weight:500;color:var(--muted);letter-spacing:.02em}
 .theme-wrap{position:relative;margin-left:auto}
-.theme-flash{position:absolute;right:calc(100% + 8px);top:50%;margin-top:-.85em;z-index:5;font-size:.82rem;line-height:1.3;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease}
+.theme-flash{position:absolute;right:calc(100% + 8px);top:50%;margin-top:-.85em;z-index:5;font-size:var(--fs-small);line-height:1.3;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease}
 .theme-flash.show{opacity:1;transform:none}
 .theme-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;padding:0}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -90,19 +102,19 @@ h2{font-size:1.15rem;font-weight:600}
 .hero .tgt-badge::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--space);box-shadow:0 3px 8px rgba(0,0,0,.45)}
 .hero .tgt-badge svg{position:absolute;inset:0;width:100%;height:100%}
 .hero .tgt-badge img{position:relative;width:22px;height:22px;filter:none}
-.hero h2{font-size:1.45rem;color:var(--space-fg)}
-.hero .stats{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:.9rem;opacity:.92;margin-top:4px}
+.hero h2{font-size:var(--fs-hero);color:var(--space-fg)}
+.hero .stats{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:var(--fs-text);opacity:.92;margin-top:4px}
 .hero .stats b{font-variant-numeric:tabular-nums}
 .hero .stats .dim{color:inherit;opacity:.7}
-.card-foot{padding:10px 16px;font-size:.88rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 22px;border-top:1px solid var(--line)}
+.card-foot{padding:10px 16px;font-size:var(--fs-text);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 22px;border-top:1px solid var(--line)}
 .card-foot:first-of-type{border-top:0}
 .card-foot b{color:var(--fg);font-variant-numeric:tabular-nums}
 .card-foot:empty{display:none}
-/* A row of values with "·" between those that share a line; the dot before the first item on each line falls in
-   the clipped strip on the left */
-.dots{display:flex;flex-wrap:wrap;row-gap:4px;flex:1;margin-left:-22px;clip-path:inset(-6px -6px -6px 22px)}
-.dots > span{position:relative;margin-left:22px}
-.dots > span::before{content:"·";position:absolute;left:-14px;color:var(--muted)}
+/* A row of values with "·" between those that share a line. Each item has a gap on its left with the dot centred
+   in it; the gap before the first item on each line falls in the clipped strip on the left. */
+.dots{--dot:1.3em;display:flex;flex-wrap:wrap;gap:4px 0;flex:1;margin-left:calc(-1 * var(--dot));clip-path:inset(-6px -6px -6px var(--dot))}
+.dots > span{position:relative;margin-left:var(--dot)}
+.dots > span::before{content:"·";position:absolute;left:calc(-1 * var(--dot));width:var(--dot);text-align:center;color:var(--muted)}
 
 /* Sticky toolbar: row 1 mission settings, row 2 table options */
 .controls{position:sticky;top:env(safe-area-inset-top, 0px);z-index:8;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
@@ -113,6 +125,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .seg button{font:inherit;font-variant-numeric:tabular-nums;border:0;background:transparent;color:var(--fg);padding:6px 9px;cursor:pointer;border-right:1px solid var(--line)}
 .tb-table .group{gap:6px}
+.tb-row > .tb-compact{display:none}  /* dropdown copies of the table options, shown only in the compact toolbar */
 .controls > *, .wrap > *{min-width:0}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:700}
@@ -124,7 +137,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 #rar button[data-r="2"][aria-pressed="true"]{background:var(--epic);color:var(--surface)}
 #rar button[data-r="3"][aria-pressed="true"]{background:var(--legend);color:var(--surface)}
 .tb-slider{display:flex;align-items:center;gap:6px}
-.tb-slider label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:help}
+.tb-slider label{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:help}
 /* Custom range sliders. --f is the 0-1 position (set from script) so the track fills up to the thumb.
    Zero-G and FTL are epic-research purple; the odds slider runs common → rare → epic → legendary. */
 .tb-slider input[type=range]{--tw:16px;--f:1;--thumb:var(--epic);--track:var(--epic);--rest:var(--line);
@@ -136,17 +149,33 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tb-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;box-sizing:border-box;width:var(--tw);height:var(--tw);margin-top:calc((6px - var(--tw)) / 2);border-radius:50%;background:var(--thumb);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--thumb),0 1px 3px rgba(0,0,0,.3)}
 .tb-slider input[type=range]::-moz-range-thumb{box-sizing:border-box;width:var(--tw);height:var(--tw);border-radius:50%;background:var(--thumb);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--thumb),0 1px 3px rgba(0,0,0,.3)}
 #odds{--track:var(--thumb)}  /* one solid colour, set from script as the value moves */
-.tb-slider output{min-width:4.2ch;font-variant-numeric:tabular-nums;color:var(--epic);font-weight:700;font-size:.9rem}
+.tb-slider output{min-width:4.2ch;font-variant-numeric:tabular-nums;color:var(--epic);font-weight:700;font-size:var(--fs-text)}
 /* Rolling numbers sit in a box that can hold its width while digits come and go */
 .n{display:inline-block;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;transition:min-width .3s ease}
 .aft{transition:opacity .25s ease}
 .aft.off{opacity:0}
-.linkbtn{font:inherit;font-size:.85rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;color:var(--fg);padding:5px 12px;cursor:pointer}
+.linkbtn{font:inherit;font-size:var(--fs-text);background:var(--surface);border:1px solid var(--line);border-radius:6px;color:var(--fg);padding:5px 12px;cursor:pointer}
 .linkbtn:hover{border-color:var(--accent)}
-.tb-toggle{display:none;align-items:center;gap:8px;width:100%;justify-content:space-between;font:inherit;font-size:.9rem;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer}
-.tb-toggle svg{width:16px;height:16px;transition:transform .2s;flex:none}
-#tb-summary{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.controls.open .tb-toggle svg{transform:rotate(180deg)}
+.tb-toggle{display:none;align-items:center;gap:8px;width:100%;justify-content:space-between;font:inherit;font-size:var(--fs-text);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer}
+.tb-toggle > svg{width:16px;height:16px;transition:transform .2s;flex:none}
+/* The folded toolbar shows every setting as a pill (its words are in #tb-summary for screen readers). On narrow
+   screens pills with an icon show only the icon, and the rest a shorter label. */
+.tb-pills{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.tb-pill{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:999px;font-size:var(--fs-micro);font-weight:700;
+  white-space:nowrap;font-variant-numeric:tabular-nums;background:color-mix(in srgb, var(--fg) 8%, transparent)}
+.tb-pill .ship-ico,.tb-pill .item-ico{height:18px;width:auto;max-width:24px;margin:0;vertical-align:0}
+.tb-pill .len-dot{margin:0}
+.tb-pill svg{width:12px;height:12px;flex:none;color:var(--epic)}  /* the research pills: epic purple like their sliders */
+.tb-pill.tgt{box-shadow:inset 0 0 0 1.5px var(--tgt)}
+.tb-pill.off{opacity:.5}
+.tb-pill .pl-l{display:inline-block;overflow:hidden;text-overflow:ellipsis;max-width:11em}
+.tb-pill .pl-s{display:none}
+@media (max-width:600px){
+  .tb-pills{gap:3px} .tb-pill{padding:0 6px}
+  .tb-pill .pl-l{display:none} .tb-pill .pl-s{display:inline}
+  .tb-pill.ico{padding:0 5px}  /* icon only */
+}
+.controls.open .tb-toggle > svg{transform:rotate(180deg)}
 /* Touch devices: bigger targets, no tap flash, no double-tap zoom delay */
 button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 @media (pointer:coarse){
@@ -158,25 +187,38 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
   .theme-btn{width:44px;height:44px}
 }
 /* Phones in portrait, and short landscape screens: a compact sticky toolbar.
-   Mission settings fold behind a summary button; the table options become one swipeable row. */
+   Everything folds behind a summary button. Open, it shows the dropdowns (Stars, Items, and Rarity become
+   dropdowns too), then one full-width row per slider. Tier tables show only the item icons. */
 @media (max-width:820px), (max-height:520px){
   .tb-toggle{display:flex}
   .controls{padding-block:8px;gap:8px}
   .controls:not(.open) .tb-mission{display:none}
-  .tb-mission{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px 16px;padding-bottom:8px}
+  .tb-table{display:none}
+  /* Open, the settings hang from the summary button as one card: a drawer, divided from its handle by a dashed line */
+  .controls.open{gap:0}
+  .controls.open .tb-toggle{border-radius:8px 8px 0 0;border-bottom:1px dashed var(--line)}
+  .controls.open .tb-mission{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;padding:10px 10px 12px;
+    box-shadow:0 12px 24px -14px rgba(0,0,0,.4);animation:drawer-in .18s ease-out}
+  .tb-mission{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 12px;padding-bottom:0;border-bottom:0}
+  .tb-mission > *{grid-column:span 6}
+  #ship-group{grid-column:span 4} #len-group{grid-column:span 2}
+  .tb-mission > .tb-compact{grid-column:span 2}
+  .tb-mission:has(#rar-dd-group[hidden]) > .tb-compact{grid-column:span 3}
   .tb-mission > .group{display:grid;gap:2px;min-width:0}
-  .tb-mission .dd,.tb-mission .dd-btn{width:100%;min-width:0}
+  #tb-mission .dd,#tb-mission .dd .dd-btn{width:100%;min-width:0;max-width:none}  /* beats the per-dropdown widths below */
   .tb-slider{min-width:0}
+  .tb-slider label{flex:none;width:4rem}  /* one width, so the tracks line up */
   .tb-slider input[type=range]{flex:1;width:auto;min-width:0}
-  .tb-table{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:14px;
-    margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px)));padding-inline:max(16px, env(safe-area-inset-left, 0px));
-    -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-  .tb-table::-webkit-scrollbar{display:none}
-  .tb-table .group,.tb-table .seg{flex-wrap:nowrap;flex:none}
-  td.name{white-space:normal;min-width:140px;max-width:170px}
+  /* Item column: just the icon. The name is in the row's tooltip and still read by screen readers; the target's
+     row keeps its green tint and bar, without the crosshair. */
+  #tiers .scroll > table{--name-w:50px}
+  .scroll col:first-child{width:50px}
+  .item-n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  td.name .tgt-mark{display:none}
 }
-@media (max-height:520px) and (min-width:821px){
-  .tb-mission{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);align-items:end}
+/* Short landscape screens have the width: three dropdowns or sliders to a row */
+@media (max-height:520px) and (min-width:600px){
+  #ship-group,#len-group,.tb-mission > *{grid-column:span 2}
 }
 .theme-btn:focus-visible,.linkbtn:focus-visible,.tb-toggle:focus-visible,input[type=range]:focus-visible,.dd-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
@@ -198,7 +240,7 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 .dd-list .item-ico,.dd-list .tgt-none{height:26px;width:26px}
 .dd .tgt-none{color:var(--tgt);padding:3px;box-sizing:border-box}
 .dd-list .tgt-n{margin-left:auto;padding-left:14px}
-.dd-list li.dd-note{display:block;cursor:default;white-space:normal;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding:8px 10px 4px;min-height:0;max-width:300px}
+.dd-list li.dd-note{display:block;cursor:default;white-space:normal;font-size:var(--fs-small);color:var(--muted);border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding:8px 10px 4px;min-height:0;max-width:300px}
 .dd-list li.small-data{background:var(--warn-soft)} .dd-list li.small-data .tgt-n{color:var(--warn);opacity:1}
 .dd-list li.no-data{background:var(--bad-soft)} .dd-list li.no-data .tgt-n{color:var(--bad);opacity:1}
 .dd-list li.small-data.active{background:color-mix(in srgb, var(--accent) 14%, var(--warn-soft))}
@@ -211,22 +253,29 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 .dd-list .ship-ico{height:26px;max-width:34px;vertical-align:middle;flex:none}
 .len-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;flex:none}
 .len-dot.l0{background:var(--rare)} .len-dot.l1{background:var(--epic)} .len-dot.l2{background:var(--legend)}
+.len-dot.rd0{background:var(--common)} .len-dot.rd1{background:var(--rare)} .len-dot.rd2{background:var(--epic)} .len-dot.rd3{background:var(--legend)}
+.len-dot.rdA{background:conic-gradient(var(--common) 0 25%, var(--rare) 0 50%, var(--epic) 0 75%, var(--legend) 0)}
 
 /* Tiers */
 .tier{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .tier-head{display:grid;gap:6px;padding:14px 16px;border-bottom:1px solid var(--line)}
-.summary{display:flex;flex-wrap:wrap;gap:4px 22px;font-size:.88rem;color:var(--muted)}
+.tier-n{font-family:var(--font-body);font-size:var(--fs-text);font-weight:400;letter-spacing:0}  /* "· 12 artifacts" after the tier name */
+.summary{font-size:var(--fs-text);color:var(--muted)}  /* always with .dots, which lays it out */
 .summary b{color:var(--fg);font-variant-numeric:tabular-nums}
+.summary b,.card-foot b,.hero .stats b,.reward-stats b{font-size:var(--fs-inline)}
+/* A value's note, e.g. "(1.2 years)", is ordinary text again */
+.summary b .aft,.card-foot b .aft{font-size:calc(1em / var(--inline-k));font-weight:400}
 .scroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 /* Tier tables share one column plan (a <colgroup> from render) with fixed layout, so every tier's columns line
-   up and long names wrap instead of widening a table. Only the item column flexes. */
-.scroll > table{table-layout:fixed}
+   up and long names wrap instead of widening a table. Only the item column flexes, down to --name-w (narrower
+   screens scroll the table instead); --cols is the other columns' total, set from render. */
+.scroll > table{table-layout:fixed;--name-w:170px;min-width:calc(var(--name-w) + var(--cols, 0px))}
 .scroll th:not(:first-child),.scroll td:not(:first-child){padding-inline:8px}
 .scroll td.name{white-space:normal;overflow-wrap:anywhere}
 th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;background:var(--surface)}
-thead tr.band th{font-size:.74rem;border-bottom:0;padding-bottom:2px}
+th{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;background:var(--surface)}
+thead tr.band th{font-size:var(--fs-micro);border-bottom:0;padding-bottom:2px}
 thead tr.band td{border-bottom:0;background:var(--surface)}
 thead tr.band td:first-child{position:sticky;left:0;z-index:1}
 th:first-child,td:first-child{text-align:left}
@@ -234,7 +283,10 @@ tbody tr:last-child td{border-bottom:0}
 td.name{font-weight:700}
 /* Keep the item column pinned while wide tables scroll sideways */
 th:first-child,td.name{position:sticky;left:0;z-index:1;background:var(--surface)}
-td.name{box-shadow:1px 0 0 var(--line)}
+/* While a table is scrolled sideways, a hairline and a soft shadow mark where the pinned item column overlaps */
+.scroll th:first-child::after,.scroll td.name::after,.scroll thead tr.band td:first-child::after{content:"";position:absolute;top:0;bottom:-1px;right:-8px;width:8px;
+  pointer-events:none;opacity:0;transition:opacity .15s ease;border-left:1px solid var(--line);background:linear-gradient(90deg, color-mix(in srgb, var(--fg) 9%, transparent), transparent)}
+.scroll.scrolled th:first-child::after,.scroll.scrolled td.name::after,.scroll.scrolled thead tr.band td:first-child::after{opacity:1}
 .item{display:flex;align-items:center;gap:8px}
 .item img{width:28px;height:28px;object-fit:contain;flex:none}
 td.b0,th.b0{background:var(--common-soft)} td.b1,th.b1{background:var(--rare-soft)}
@@ -243,46 +295,47 @@ td.r0,td.r1,td.r2,td.r3{font-weight:700}
 .strip{display:inline-grid;grid-auto-flow:column;grid-auto-columns:9px;gap:2px;vertical-align:middle}
 .strip i{display:block;height:14px;border-radius:2px;background:var(--heat0)}
 .strip i.cur{outline:1.5px solid var(--fg)}
-.warn{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 12px;font-size:.9rem}
-.warn-title{display:flex;align-items:center;gap:7px;margin:0 0 3px;font-family:var(--font-display);font-size:.8rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.warn{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 12px;font-size:var(--fs-text)}
+.warn-title{display:flex;align-items:center;gap:7px;margin:0 0 3px;font-family:var(--font-display);font-size:var(--fs-small);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 .warn-title svg{width:16px;height:16px;flex:none}
 .warn p{margin:0}
-.notes{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;color:var(--muted);font-size:.9rem}
-.notes h2{color:var(--fg);margin-bottom:6px;font-size:1.05rem}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;color:var(--muted);font-size:var(--fs-text)}
+.notes h2{color:var(--fg);margin-bottom:6px}
+.notes b{font-weight:400;color:var(--fg)}  /* lead terms: darker, not bold, so they keep the line's size */
 .notes ul{margin:0;padding-left:18px;display:grid;gap:4px}
 .notes a{color:var(--accent)}
 .notes .tgt-mark{vertical-align:-.15em;margin:0 4px 0 0}
-.site-foot{font-size:.78rem;color:var(--muted);line-height:1.5;padding:14px 2px 0;border-top:1px solid var(--line);display:grid;gap:5px}
+.site-foot{font-size:var(--fs-small);color:var(--muted);line-height:1.5;padding:14px 2px 0;border-top:1px solid var(--line);display:grid;gap:5px}
 .site-foot p{margin:0}
 .site-foot a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
 .site-foot a:hover{color:var(--accent)}
 /* Rates that rest on fewer than 5 sightings */
 .rough,.rough .n{opacity:.62;text-decoration:underline dotted;text-underline-offset:3px}
 .rough .n{opacity:1}
-.empty{padding:14px 16px;color:var(--muted)}
+.empty{padding:14px 16px;color:var(--muted);font-size:var(--fs-text)}
 
 /* Item tooltip */
 tbody tr[data-id]{cursor:help}
 tbody tr[data-id]:hover td,tbody tr[data-id]:focus-within td{box-shadow:inset 0 0 0 9999px color-mix(in srgb, var(--accent) 7%, transparent)}
 /* The mission target's rows: a teal tint (hover is blue) and a bar on the name cell, which stays opaque for sticky scrolling */
 tbody tr.tgt td{box-shadow:inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 10%, transparent)}
-tbody tr.tgt td.name{box-shadow:inset 3px 0 0 var(--tgt),1px 0 0 var(--line),inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 10%, transparent)}
+tbody tr.tgt td.name{box-shadow:inset 3px 0 0 var(--tgt),inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 10%, transparent)}
 tbody tr.tgt:hover td,tbody tr.tgt:focus-within td{box-shadow:inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 17%, transparent)}
-tbody tr.tgt:hover td.name,tbody tr.tgt:focus-within td.name{box-shadow:inset 3px 0 0 var(--tgt),1px 0 0 var(--line),inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 17%, transparent)}
+tbody tr.tgt:hover td.name,tbody tr.tgt:focus-within td.name{box-shadow:inset 3px 0 0 var(--tgt),inset 0 0 0 9999px color-mix(in srgb, var(--tgt) 17%, transparent)}
 .tgt-mark{width:1em;height:1em;flex:none;color:var(--tgt);margin-left:-2px}
 .summary .tgt-mark{vertical-align:-.15em;margin:0 .15em 0 0}
 tbody tr[data-id] .item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-.tip{position:fixed;z-index:40;box-sizing:border-box;width:max-content;max-width:calc(100vw - 24px);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:12px 14px;pointer-events:none;font-size:.88rem}
+.tip{position:fixed;z-index:40;box-sizing:border-box;width:max-content;max-width:calc(100vw - 24px);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:12px 14px;pointer-events:none;font-size:var(--fs-text)}
 .tip-head{display:flex;gap:10px;align-items:center;margin-bottom:8px}
 .tip-head .rw{width:46px;height:46px;flex:none;cursor:default;background:var(--space)}
-.tip-title{font-family:var(--font-display);font-size:1rem;font-weight:500;display:block;line-height:1.2}
+.tip-title{font-family:var(--font-display);font-size:var(--fs-h3);font-weight:500;display:block;line-height:1.2}
 .tip-title .tt-r{font-weight:700}
 .tip-title .tgt-mark{vertical-align:-.12em;margin-left:5px}
-.tip-sub{display:block;color:var(--muted);font-size:.8rem}
-.tip table{width:100%;font-size:.85rem}
+.tip-sub{display:block;color:var(--muted);font-size:var(--fs-small)}
+.tip table{width:100%;font-size:var(--fs-small)}
 .tip th,.tip td{padding:3px 6px;border-bottom:1px solid var(--line);white-space:normal;text-align:left}
 .tip th:nth-child(n+3),.tip td:nth-child(n+3){text-align:right}
-.tip th{font-size:.66rem}
+.tip th{font-size:var(--fs-micro)}
 .tip tr:last-child td{border-bottom:0}
 .tip td:first-child{font-weight:700;white-space:nowrap}
 .tip .none{color:var(--muted);margin-top:6px}
@@ -290,38 +343,41 @@ tbody tr[data-id] .item:focus-visible{outline:2px solid var(--accent);outline-of
 .tip tr.hl td{background:color-mix(in srgb, var(--hlc, var(--accent)) 16%, transparent)}
 .tip tr.h0{--hlc:var(--common)} .tip tr.h1{--hlc:var(--rare)} .tip tr.h2{--hlc:var(--epic)} .tip tr.h3{--hlc:var(--legend)}
 @media (min-width:560px){ .tip, .tip td, .tip th, .tip-sub, .tip-title, .tip .none{white-space:nowrap} }
-.tip.tip-text{white-space:normal;max-width:min(320px, calc(100vw - 24px));font-size:.85rem;line-height:1.4}
+.tip.tip-text{white-space:normal;max-width:min(320px, calc(100vw - 24px));line-height:1.4}
 th[data-tip],label[data-tip]{cursor:help}
 th[data-tip]:hover,th[data-tip]:focus-visible{color:var(--fg)}
 th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .tb-slider label{text-decoration:underline dotted;text-underline-offset:3px}
-.hero-tip{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:color-mix(in srgb, currentColor 60%, transparent);cursor:help;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+/* The dotted underline is a border on a pseudo-element, inset by the letters' side bearings, so it starts and ends
+   with the letters (a text-decoration runs from the box edges) */
+.hero-tip{position:relative;cursor:help;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.hero-tip::after{content:"";position:absolute;left:.05em;right:.04em;bottom:0;border-bottom:1px dotted color-mix(in srgb, currentColor 60%, transparent);pointer-events:none}
 .hero-tip:focus-visible{outline:2px solid var(--space-fg);outline-offset:2px;border-radius:2px}
 
 /* Mission reward simulator */
 .reward{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
 .reward-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px 20px}
-.reward-sub{margin:4px 0 0;color:var(--muted);font-size:.9rem;max-width:72ch}
+.reward-sub{margin:4px 0 0;color:var(--muted);font-size:var(--fs-text);max-width:72ch}
 .reroll-box{display:grid;justify-items:end}
 .launch-count{color:var(--muted);font-variant-numeric:tabular-nums;opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s}
 .launch-count.show{opacity:1;visibility:visible;transition:opacity .3s ease}
 .launch-count .sep{margin-right:8px}
-.reward-stats{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:.9rem;color:var(--muted)}
+.reward-stats{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:var(--fs-text);color:var(--muted)}
 .reward-stats b{font-variant-numeric:tabular-nums}
 .reward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;padding:12px;border-radius:10px;background:var(--space);overflow:hidden}
 .list-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin-top:4px}
-.list-head h3{font-size:1rem}
-.reward-list{list-style:none;margin:0;padding:0;columns:3 230px;column-gap:24px;font-size:.92rem}
+.list-head h3{font-size:var(--fs-h3)}
+.reward-list{list-style:none;margin:0;padding:0;columns:3 230px;column-gap:24px;font-size:var(--fs-body)}
 .reward-list li{break-inside:avoid;display:flex;align-items:center;gap:8px;padding:3px 0;cursor:help}
 .list-tools{display:flex;flex-wrap:wrap;gap:8px 18px}
 /* Type sections: headers inside the same dark box, and full-width headers in the list */
-.rg-head{grid-column:1 / -1;display:flex;flex-wrap:wrap;row-gap:2px;align-items:baseline;gap:8px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:color-mix(in srgb, var(--space-fg) 72%, transparent);padding-top:8px;margin-top:4px;border-top:1px solid color-mix(in srgb, var(--space-fg) 14%, transparent)}
+.rg-head{grid-column:1 / -1;display:flex;flex-wrap:wrap;row-gap:2px;align-items:baseline;gap:8px;font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:color-mix(in srgb, var(--space-fg) 72%, transparent);padding-top:8px;margin-top:4px;border-top:1px solid color-mix(in srgb, var(--space-fg) 14%, transparent)}
 .rg-head:first-child{border-top:0;margin-top:0;padding-top:0}
 .sec-n{font-variant-numeric:tabular-nums;opacity:.75}
-.reward-list li.rl-head{column-span:all;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 0 3px;margin-bottom:4px;border-bottom:1px solid var(--line);cursor:default}
+.reward-list li.rl-head{column-span:all;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 0 3px;margin-bottom:4px;border-bottom:1px solid var(--line);cursor:default}
 .reward-list li.rl-head:first-child{padding-top:0}
 /* Per-section counts on the right of each type header: rarities, then tiers */
-.sec-stats{margin-left:auto;display:flex;flex-wrap:wrap;gap:2px 16px;text-transform:none;letter-spacing:0;font-size:.78rem;font-variant-numeric:tabular-nums}
+.sec-stats{margin-left:auto;display:flex;flex-wrap:wrap;gap:2px 16px;text-transform:none;letter-spacing:0;font-size:var(--fs-small);font-variant-numeric:tabular-nums}
 .sec-stats > span{display:flex;gap:10px}
 .sec-stats b{font-weight:700}
 .sec-tier{opacity:.8}
@@ -329,7 +385,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 /* The type headers in the dark box use the dark-theme rarity colours so they stay legible in light mode */
 .rg-head{--common:#a9b4c2;--rare:#6aaef5;--epic:#b98af0;--legend:#f0b54a}
 /* Tier pill, coloured by the rarity of that row's copies */
-.tpill{flex:none;display:inline-grid;place-items:center;min-width:2.5em;padding:0 6px;border-radius:999px;font-size:.7rem;font-weight:700;line-height:1.6;color:var(--surface);font-variant-numeric:tabular-nums}
+.tpill{flex:none;display:inline-grid;place-items:center;min-width:2.5em;padding:0 6px;border-radius:999px;font-size:var(--fs-micro);font-weight:700;line-height:1.6;color:var(--surface);font-variant-numeric:tabular-nums}
 .tr0{background:var(--common)} .tr1{background:var(--rare)} .tr2{background:var(--epic)} .tr3{background:var(--legend)}
 #reroll,.float-reroll{display:inline-flex;align-items:center;gap:7px}
 #reroll .ship-ico,.float-reroll .ship-ico{margin:0;height:22px;max-width:30px;vertical-align:middle}
@@ -338,7 +394,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 .float-dock{position:sticky;bottom:calc(16px + env(safe-area-inset-bottom, 0px));height:46px;margin-top:4px;z-index:6;pointer-events:none}
 /* Relaunch, in the page and floating: a filled accent pill with a ring in the page colour, so the floating
    copy reads clearly over whatever scrolls beneath it */
-.fab{background:var(--accent);color:var(--surface);border-color:transparent;font-weight:700;font-size:.95rem;padding:9px 18px 9px 12px;
+.fab{background:var(--accent);color:var(--surface);border-color:transparent;font-weight:700;font-size:var(--fs-body);padding:9px 18px 9px 12px;
   border-radius:999px;box-shadow:0 0 0 3px var(--bg),0 10px 28px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.2)}
 .fab:hover{border-color:transparent;background:color-mix(in srgb, var(--accent) 86%, var(--fg))}
 .fab .ship-ico{filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
@@ -349,7 +405,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 .float-dock .float-reroll.fly{opacity:1;visibility:visible;transition:none}  /* beats the show/hide transitions */
 /* "New drop data is ready": a small note at the bottom left while an update waits to be applied */
 .update-note{position:fixed;left:max(16px, env(safe-area-inset-left, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:20;
-  background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:.85rem;
+  background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:var(--fs-text);
   box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .update-note .lede-link{color:var(--accent);font-weight:700;margin-left:4px}
 /* Install-as-an-app panel (PWA build) and the intro link that reopens it */
@@ -362,7 +418,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
   border-radius:12px;background:color-mix(in srgb, var(--accent) 7%, var(--surface))}
 .install-badge{flex:none;width:24px;height:24px;color:var(--accent)}
 .install-body{display:grid;gap:6px;min-width:0}
-.install h2{margin:0;font-size:1.05rem;line-height:24px}  /* one line = the icon's height, so they line up */
+.install h2{margin:0;line-height:24px}  /* one line = the icon's height, so they line up */
 .install p{margin:0;line-height:1.55}
 .install-go{justify-self:start;margin-top:4px;background:var(--accent);color:var(--surface);border-color:transparent;font-weight:700}
 .install-go:hover{border-color:transparent;background:color-mix(in srgb, var(--accent) 86%, var(--fg))}
@@ -377,10 +433,8 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 @media (pointer:coarse){.install-x{width:44px;height:44px;top:2px;right:2px}}
 /* Small icons in front of item names mentioned in text */
 .itemtag{white-space:nowrap}
-/* Text that sits with an icon (ship and item mentions, the target word, install chips, the installed note)
-   is bold and uppercase, a touch smaller so it doesn't shout */
-.shiptag,.itemtag,.icon-text,.ui-key{font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.88em}
-.tb-toggle .shiptag,.tb-toggle .itemtag{font-weight:inherit;text-transform:none;letter-spacing:normal;font-size:inherit}  /* the folded toolbar button stays a control */
+/* Text that sits with an icon (ship and item mentions, the target word, install chips, the installed note) reads
+   like the words around it, same case, size, and weight: the icon marks it */
 .item-ico{height:1.4em;width:1.4em;object-fit:contain;vertical-align:-.4em;margin-right:.2em}
 .reward-list img{width:22px;height:22px;object-fit:contain;flex:none}
 .reward-list .qty{font-variant-numeric:tabular-nums;font-weight:700;min-width:3.2ch;text-align:right}
@@ -412,10 +466,12 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 @keyframes ray-c{0%{transform:rotate(200deg) scale(.9);opacity:0}32%{opacity:.8}66%{opacity:.65}100%{transform:rotate(395deg) scale(1.1);opacity:0}}
 /* Pause the shine when nobody can see it, and while a slider is being dragged */
 .still .ray,.still .core,.dragging .reward .ray,.dragging .reward .core{animation-play-state:paused}
+@keyframes drawer-in{from{opacity:0;transform:translateY(-6px)}}
 @keyframes afx-pulse{0%,100%{opacity:.45}50%{opacity:1}}
 
-@media (max-width:520px){h1{font-size:1.5rem}.logo{width:3rem;height:3rem}.subtitle{font-size:.9rem}.hero img{width:72px;height:72px}.hero h2{font-size:1.2rem}#ship-dd .dd-btn{min-width:200px}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}.rw .ray,.rw .core{animation:none}.rw .core{opacity:.8}.rw .ra{opacity:.7}}
+/* Phones: smaller display headings only; text sizes stay the same at every width */
+@media (max-width:520px){:root{--fs-h1:1.5rem;--fs-hero:1.25rem}.logo{width:3rem;height:3rem}.subtitle{font-size:var(--fs-text)}.hero img{width:72px;height:72px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.tb-mission{animation:none!important}.rw .ray,.rw .core{animation:none}.rw .core{opacity:.8}.rw .ra{opacity:.7}}
 </style>
 
 <div class="wrap">
@@ -466,17 +522,18 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 
   <div class="controls" id="controls" role="region" aria-label="Mission settings">
     <button type="button" class="tb-toggle" id="tb-toggle" aria-expanded="false" aria-controls="tb-mission">
-      <span id="tb-summary">Mission settings</span>
+      <span class="sr-only" id="tb-summary">Mission settings</span>
+      <span class="tb-pills" id="tb-pills" aria-hidden="true"></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     <div class="tb-row tb-mission" id="tb-mission" role="group" aria-label="Mission">
-      <div class="group"><span class="label" id="ship-label">Ship</span>
+      <div class="group" id="ship-group"><span class="label" id="ship-label">Ship</span>
         <div class="dd" id="ship-dd" data-label="Ship">
           <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="ship-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="ship-label" hidden></ul>
         </div>
       </div>
-      <div class="group"><span class="label" id="len-label">Length</span>
+      <div class="group" id="len-group"><span class="label" id="len-label">Length</span>
         <div class="dd" id="len-dd" data-label="Mission length">
           <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="len-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="len-label" hidden></ul>
@@ -486,6 +543,25 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
         <div class="dd" id="tgt-dd" data-label="Mission target">
           <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="tgt-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="tgt-label" hidden></ul>
+        </div>
+      </div>
+      <!-- The table options as dropdowns, for the compact toolbar (the button rows below are hidden there) -->
+      <div class="group tb-compact"><span class="label" id="stars-dd-label">Stars</span>
+        <div class="dd" id="stars-dd" data-label="Stars">
+          <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="stars-dd-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="stars-dd-label" hidden></ul>
+        </div>
+      </div>
+      <div class="group tb-compact"><span class="label" id="cats-dd-label">Items</span>
+        <div class="dd" id="cats-dd" data-label="Items">
+          <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="cats-dd-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="cats-dd-label" hidden></ul>
+        </div>
+      </div>
+      <div class="group tb-compact" id="rar-dd-group"><span class="label" id="rar-dd-label">Rarity</span>
+        <div class="dd" id="rar-dd" data-label="Rarity">
+          <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="rar-dd-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="rar-dd-label" hidden></ul>
         </div>
       </div>
       <div class="tb-slider">
@@ -556,7 +632,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
       <li>Drop shares come from player-logged missions (mixed research levels) and are assumed not to depend on capacity.</li>
       <li><b>Per launch</b>: average copies of the item, in the shown rarity, from one launch (its share of logged drops × capacity). <b>P(≥1)</b>: the chance one launch returns at least one; each of the <i>capacity</i> items is drawn independently, so it's 1 − (1 − share)<sup>capacity</sup>. <b><span class="odds-txt">50</span>% in</b>: launches for a <span class="odds-txt">50</span>% chance of at least one. Set the odds with the Odds slider.</li>
       <li><span class="t-rare">Rare</span>, <span class="t-epic">epic</span>, and <span class="t-legend">legendary</span> versions have stone slots. Stones, fragments, and ingredients only come in common.</li>
-      <li>Tier summaries: "Odds of all … in single launch" is the chance one launch has every listed item. "… getting everything" is the launches needed to have seen them all at your odds; the rarest item dominates it. "… getting target" does the same for the target's item, or says "unobtainable" when it doesn't drop there.</li>
+      <li>Tier summaries: "Odds of all … in single launch" is the chance one launch has every listed item. "… getting everything" is the launches needed to have seen them all at your odds; the rarest item dominates it. "… getting target" does the same for the target's item, or says when it doesn't drop there.</li>
       <li>The strip shows P(≥1) at each star level; the outlined cell is the selected level.</li>
       <li><svg class="tgt-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg><b class="icon-text">Target</b> uses only drops logged with that target set. The game doesn't publish how targeting works, and the boost varies widely, so nothing is estimated. Only the Quintillion Chicken and later can target. The count beside each target in the list is how many items were logged with it for this ship, length, and star level; "no data at N★" means none yet. Stone fragments are hidden: targeting them is almost never worthwhile (a poor return, and lower odds of tier 2–4 stones), so consume artifacts for fragments instead.</li>
       <li>Capacity = (base + per-star bump × stars) × (1 + 5% × Zero-G level), rounded down. FTL cuts mission time 1% per level, from the Quintillion Chicken up; it changes days, not drops. Quality runs from the mission's minimum to its maximum plus the per-star bump.</li>
@@ -690,15 +766,15 @@ function fmtDur(sec){
   return [d ? d + "d" : "", h ? h + "h" : "", m ? m + "m" : ""].filter(Boolean).join(" ") || "0m";
 }
 /* Column widths for the tier tables (px). Same for every tier in a view, so the columns line up; the item
-   column takes what's left, but never less than COL_NAME_MIN (narrower screens scroll the table instead).
+   column takes what's left, but never less than --name-w in the CSS (170 px, or just the icon on small screens).
    Sized from a sweep of every view on macOS, plus ~4 px of headroom: Linux and Windows render the same fonts
    slightly wider. */
-const COLW = { per: 88, p: 76, k: 78, pR: 136, kR: 96, share: 150 }, COL_NAME_MIN = 170;
+const COLW = { per: 88, p: 76, k: 78, pR: 136, kR: 96, share: 150 };
 function colPlan(isArt, r, sh){
   const stripW = Math.max((sh.maxStars + 1) * 11 + 18, 90);  // 9px cells + 2px gaps + padding; fits the "0★ → N★" header
   const w = r === "all" ? [COLW.per, COLW.p, COLW.k, ...(isArt ? [0, 1, 2, 3].flatMap(() => [COLW.p, COLW.k]) : []), stripW]
                         : [COLW.per, COLW.pR, COLW.kR, COLW.share, stripW];
-  return { html: `<colgroup><col>${w.map(x => `<col style="width:${x}px">`).join("")}</colgroup>`, min: COL_NAME_MIN + w.reduce((a, b) => a + b, 0) };
+  return { html: `<colgroup><col>${w.map(x => `<col style="width:${x}px">`).join("")}</colgroup>`, cols: w.reduce((a, b) => a + b, 0) };
 }
 function launchesToSeeAll(lams, target){
   if (!lams.length || lams.some(l => !(l > 0))) return null;
@@ -943,7 +1019,7 @@ const isTgt = id => !!curTgt && tgtItem(DATA.items[id].t) === id;
 const TGT_MARK = `<svg class="tgt-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="target"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>`;
 const TGT_GLYPH = TGT_MARK.replace('role="img" aria-label="target"', 'aria-hidden="true"');
 const TGT_CAT = { art: "art", stone: "stone", frag: "stone", ing: "ing" };  // target kind → Items table
-const itemCell = id => { const it = DATA.items[id]; return `<td class="name"><span class="item" tabindex="0" aria-describedby="tip"><img src="${icon(it.i)}" alt="" loading="lazy" width="28" height="28">${it.n}${isTgt(id) ? TGT_MARK : ""}</span></td>`; };
+const itemCell = id => { const it = DATA.items[id]; return `<td class="name"><span class="item" tabindex="0" aria-describedby="tip"><img src="${icon(it.i)}" alt="" loading="lazy" width="28" height="28"><span class="item-n">${it.n}</span>${isTgt(id) ? TGT_MARK : ""}</span></td>`; };
 
 /* Icon tile with the in-game style shiny rays; `r` is rarity 0-3 */
 const GLOW = `<span class="glow" aria-hidden="true"><i class="ray ra"></i><i class="ray rb"></i><i class="ray rc"></i><i class="core"></i></span>`;
@@ -1036,17 +1112,25 @@ function makeDropdown(rootId, getOptions, getValue, onChange, note = ""){
     val.innerHTML = o ? (o.btn || o.html) : "";
     btn.setAttribute("aria-label", `${root.dataset.label}: ${o ? o.text : ""}`);
   };
-  const fill = () => {
+  const fill = (scroll = true) => {
     list.innerHTML = opts.map((o, i) => `<li role="option" id="${rootId}-o${i}" data-i="${i}" aria-selected="${o.value === getValue()}" class="${[o.cls, i === active ? "active" : ""].filter(Boolean).join(" ")}">${o.html}</li>`).join("") +
       (note ? `<li class="dd-note" role="presentation" aria-hidden="true">${note}</li>` : "");  // said in the button's tooltip too
     list.setAttribute("aria-activedescendant", `${rootId}-o${active}`);
-    list.querySelector(".active")?.scrollIntoView({ block: "nearest" });
+    if (scroll) list.querySelector(".active")?.scrollIntoView({ block: "nearest" });
   };
   const open = () => {
     opts = getOptions();
     active = Math.max(0, opts.findIndex(o => o.value === getValue()));
     list.hidden = false; btn.setAttribute("aria-expanded", "true");
-    fill(); list.focus();
+    fill(false);
+    // Keep the list on screen: line it up with the button's right edge if it would run off the right, and end
+    // it at the bottom of the window (the toolbar is sticky, so scrolling the page can't bring it into view)
+    list.style.left = list.style.right = list.style.maxHeight = "";
+    const b = list.getBoundingClientRect();
+    if (b.right > innerWidth - 8) { list.style.left = "auto"; list.style.right = "0"; }
+    if (b.bottom > innerHeight - 8) list.style.maxHeight = `${Math.max(160, innerHeight - 8 - b.top)}px`;
+    list.querySelector(".active")?.scrollIntoView({ block: "nearest" });
+    list.focus();
   };
   const close = focusBtn => {
     if (list.hidden) return;
@@ -1076,7 +1160,15 @@ function makeDropdown(rootId, getOptions, getValue, onChange, note = ""){
 }
 
 /* Controls */
-let shipDD, lenDD, tgtDD;
+let shipDD, lenDD, tgtDD, starsDD, catsDD, rarDD;
+const CATS = [["art", "Artifacts", "Art"], ["stone", "Stones", "Stones"], ["ing", "Ingredients", "Ingr."]];  // value, name, shorthand
+// A pill for the folded toolbar. With `short`, narrow screens show that instead ("" = just the icon).
+const tbPill = (text, { ico = "", short, cls = "", style = "" } = {}) =>
+  `<span class="tb-pill${cls ? " " + cls : ""}${ico && short === "" ? " ico" : ""}"${style ? ` style="${style}"` : ""}>${ico}` +
+  (short === undefined ? `<span>${text}</span>` : `<span class="pl-l">${text}</span>${short ? `<span class="pl-s">${short}</span>` : ""}`) + `</span>`;
+// Lucide "box" (capacity, for Zero-G) and "zap" (FTL)
+const ZEROG_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
+const FTL_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
 const TGT_SVG = `<svg class="tgt-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>`;
 const TGT_KIND_ORDER = { art: 0, stone: 1, frag: 2, ing: 3 };  // fragments aren't offered (see build_data.py)
 const fmtCount = n => n >= 999500 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n);
@@ -1109,6 +1201,20 @@ function wire(){
     v => { state.len = v; render(); });
   tgtDD = makeDropdown("tgt-dd", targetOptions, () => curTgt || "none", v => { state.target = v; render(); },
     "Stone fragments are hidden: targeting them is almost never worthwhile.");
+  // The compact toolbar's dropdown copies of the Stars, Items, and Rarity buttons
+  starsDD = makeDropdown("stars-dd",
+    () => Array.from({ length: ship().maxStars + 1 }, (_, k) => ({ value: k, text: `${k} stars`, html: `<span class="dd-t">${k}★</span>` })),
+    () => state.star,
+    v => { state.star = v; render(); });
+  catsDD = makeDropdown("cats-dd",
+    () => CATS.map(([value, name]) => ({ value, text: name, html: `<span class="dd-t">${name}</span>` })),
+    () => state.cat,
+    v => { state.cat = v; render(); });
+  rarDD = makeDropdown("rar-dd",
+    () => ["all", 0, 1, 2, 3].map(r => { const name = r === "all" ? "All" : RARITIES[r], c = r === "all" ? "A" : r;
+      return { value: r, text: r === "all" ? "All rarities" : name, html: `<i class="len-dot rd${c}"></i><span class="dd-t r${c}">${name}</span>` }; }),
+    () => state.rar,
+    v => { state.rar = v; render(); });
   $("stars").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { state.star = +b.dataset.s; render(); } });
   $("rar").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { state.rar = b.dataset.r === "all" ? "all" : +b.dataset.r; render(); } });
   $("cats").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { state.cat = b.dataset.cat; render(); } });
@@ -1124,6 +1230,10 @@ function wire(){
   const relaunch = e => { launches++; rollReward(); renderReward(); rumble(e.currentTarget); };
   $("reroll").addEventListener("click", relaunch);
   $("reroll-float").addEventListener("click", relaunch);
+  // Tables scrolled sideways show a divider beside the pinned item column (scroll doesn't bubble, so capture it)
+  $("tiers").addEventListener("scroll", e => {
+    const sc = e.target; if (sc.classList && sc.classList.contains("scroll")) sc.classList.toggle("scrolled", sc.scrollLeft > 0);
+  }, { capture: true, passive: true });
   $("tb-toggle").addEventListener("click", () => {
     const open = $("controls").classList.toggle("open");
     $("tb-toggle").setAttribute("aria-expanded", String(open));
@@ -1139,7 +1249,7 @@ const HERO_TIPS = {
 };
 const heroTip = (text, tip) => `<span class="hero-tip" tabindex="0" data-tip="${tip.replace(/"/g, "&quot;")}">${text}</span>`;
 /* Toolbar readouts, the mission card and the star-progress lines (small; rebuilt on every change) */
-let lastSummary = "";
+let lastPills = [];
 function renderTop(sh, m, s){
   // Toolbar
   shipDD.paint(); lenDD.paint(); tgtDD.paint();
@@ -1161,8 +1271,26 @@ function renderTop(sh, m, s){
   $("ftl-box").style.opacity = sh.ftl ? "" : ".55";
   $("ftl-label").dataset.tip = `<b>FTL Drive Upgrades</b> (epic research)<br>−1% mission time per level, up to −60% at level 60.<br>` +
     (sh.ftl ? "Applies from the Quintillion Chicken up. Changes days, not drops." : `Doesn't apply to ${sh.name}.`);
-  const summary = `${shipTag(sh)} · ${m.label}${curTgt ? ` · ${tgtTag(curTgt)}` : ""} · Zero-G ${state.zerog} · FTL ${state.ftl} · ${state.odds}% odds`;
-  if (summary !== lastSummary) { $("tb-summary").innerHTML = summary; lastSummary = summary; }
+  // Folded toolbar: every setting as a pill, and the same in words for screen readers (the pills are hidden from them)
+  const g = curTgt && DATA.targets[curTgt], rarOn = state.cat === "art" && state.rar !== "all", cat = CATS.find(c => c[0] === state.cat);
+  $("tb-summary").textContent = [sh.name, m.label, g ? `targeting ${g.n}` : "", `${s} stars`, cat[1], rarOn ? RARITIES[state.rar] : "",
+    `Zero-G ${state.zerog}`, sh.ftl ? `FTL ${state.ftl}` : "", `${state.odds}% odds`].filter(Boolean).join(", ");
+  const pills = [
+    tbPill(sh.name, { ico: `<img class="ship-ico" src="${icon(sh.icon)}" alt="">`, short: "" }),
+    tbPill(m.label, { ico: `<i class="len-dot l${state.len}"></i>`, short: "" }),
+    g ? tbPill(g.n, { ico: `<img class="item-ico" src="${icon(DATA.items[g.i].i)}" alt="">`, short: "", cls: "tgt" }) : "",
+    tbPill(`${s}★`),
+    tbPill(cat[1], { short: cat[2] }),
+    rarOn ? tbPill(RARITIES[state.rar], { ico: `<i class="len-dot rd${state.rar}"></i>`, short: "", cls: `r${state.rar}` }) : "",
+    tbPill(`Zero-G ${state.zerog}`, { ico: ZEROG_SVG, short: `${state.zerog}` }),
+    tbPill(`FTL ${state.ftl}`, { ico: FTL_SVG, short: `${state.ftl}`, cls: sh.ftl ? "" : "off" }),
+    tbPill(`${state.odds}% odds`, { short: `${state.odds}%`, style: `color:${oddsColor(state.odds)}` }),
+  ].filter(Boolean);
+  // Swap only the pills that changed, so dragging a slider doesn't reload the icons in the others
+  const box = $("tb-pills");
+  if (pills.length !== lastPills.length) box.innerHTML = pills.join("");
+  else pills.forEach((h, i) => { if (h !== lastPills[i]) box.children[i].outerHTML = h; });
+  lastPills = pills;
 
   // Hero
   $("hero").className = `hero len-${state.len}`;
@@ -1214,7 +1342,7 @@ function render(){
   const isArt = state.cat === "art";
   const r = isArt ? state.rar : "all";          // stones and ingredients only come in common
   const RCOLS = isArt ? [0, 1, 2, 3] : [];
-  $("rar-group").hidden = !isArt;
+  $("rar-group").hidden = $("rar-dd-group").hidden = !isArt;
 
   renderTop(sh, m, s);
 
@@ -1222,6 +1350,7 @@ function render(){
   $("stars").innerHTML = Array.from({ length: sh.maxStars + 1 }, (_, k) => `<button type="button" id="star-${k}" data-s="${k}" aria-pressed="${k === s}" aria-label="${k} stars">${k}★</button>`).join("");
   document.querySelectorAll("#rar button").forEach(b => b.setAttribute("aria-pressed", String(String(state.rar) === b.dataset.r)));
   document.querySelectorAll("#cats button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cat === state.cat)));
+  starsDD.paint(); catsDD.paint(); rarDD.paint();
 
   // Sample size
   const L = level(s), warn = $("sample-warn");
@@ -1242,19 +1371,19 @@ function render(){
   const allIds = new Set();
   for (let k = 0; k <= sh.maxStars; k++) { const Lk = level(k); if (Lk) for (const id of Object.keys(Lk.d)) allIds.add(id); }
   // "Launches to have N% chance of getting target" for the target's item in tier t, shown when the target belongs in this table.
-  // Unobtainable when that item doesn't drop here (in the selected rarity) at this star level.
+  // When that item doesn't drop here (in the selected rarity) at this star level, the line says so instead.
   const tgtLine = (t, own) => {
     const tid = tgtItem(t);
     if (!tid || TGT_CAT[DATA.targets[curTgt].k] !== state.cat) return "";
     const le = lamEff(tid, r, s), k = le > 0 ? launchesToSeeAll([le], state.odds / 100) : null;
-    let val;
-    if (k != null) val = `<b>${N(`t${t}|tgt`, k, "launch", launchNote(k))}</b>`;
+    const tgtWord = `${TGT_GLYPH}<span class="icon-text">target</span>`;
+    let line;
+    if (k != null) line = `<span>Launches to have <span class="odds-txt">${state.odds}</span>% chance of getting ${tgtWord}: <b>${N(`t${t}|tgt`, k, "launch", launchNote(k))}</b></span>`;
     else {
       let ever = false; for (let j = 0; j <= sh.maxStars && !ever; j++) ever = lam(tid, r, j) > 0;
       const as = rarLabel ? " as " + rarLabel.trim() : "";
-      val = `<b>unobtainable</b> <span class="dim">(${ever ? `doesn't drop${as} at ${s}★` : `never drops${as} from this mission`})</span>`;
+      line = `<span>${tgtWord.replace(">target<", ">Target<")} ${ever ? `doesn't drop${as} at ${s}★` : `never drops${as} from this mission`}</span>`;
     }
-    const line = `<span>Launches to have <span class="odds-txt">${state.odds}</span>% chance of getting ${TGT_GLYPH}<span class="icon-text">target</span>: ${val}</span>`;
     return own ? `<div class="summary dots">${line}</div>` : line;
   };
   const out = [];
@@ -1301,7 +1430,7 @@ function render(){
     }
     out.push(`<section class="tier" data-t="${t}" aria-labelledby="h-t${t}">
       <div class="tier-head">
-        <h2 id="h-t${t}">Tier ${t} <span class="dim" style="font-family:var(--font-body);font-size:.9rem;font-weight:400">· ${N(`t${t}|n`, rows.length, "int")} ${rarLabel}${label}</span></h2>
+        <h2 id="h-t${t}">Tier ${t} <span class="dim tier-n">· ${N(`t${t}|n`, rows.length, "int")} ${rarLabel}${label}</span></h2>
         <div class="summary dots">
           <span>Odds of all ${rarLabel}${label} in single launch: <b>${N(`t${t}|all`, allOne, "pct")}</b></span>
           <span>Launches to have <span class="odds-txt">${state.odds}</span>% chance of getting everything: ${seeAll}</span>
@@ -1309,7 +1438,7 @@ function render(){
         </div>
         ${notYet.length ? `<div class="summary dots"><span>Not dropping${rarLabel ? " as " + rarLabel.trim() : ""} at ${s}★: ${notYet.join(", ")}</span></div>` : ""}
       </div>
-      <div class="scroll"><table aria-labelledby="h-t${t}" style="min-width:${cols.min}px">${cols.html}<thead>${head}</thead><tbody>${body}</tbody></table></div>
+      <div class="scroll"><table aria-labelledby="h-t${t}" style="--cols:${cols.cols}px">${cols.html}<thead>${head}</thead><tbody>${body}</tbody></table></div>
     </section>`);
   }
   const before = snapRows();
