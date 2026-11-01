@@ -7,7 +7,7 @@ Context for anyone (human or Claude) continuing development. Read this before ch
 **Ship Odditer** ("Egg Inc. Mission Drop Calculator") is a single-page web app. For any Egg, Inc. spaceship,
 mission length (Short / Standard / Extended), target, and star level, it shows the chance of getting each
 artifact, stone, and ingredient from one mission, by rarity, plus a mission reward simulator. All maths runs in
-the browser from pre-built data files. Version 1.0.0 (Nov 2026); see `CHANGELOG.md`.
+the browser from pre-built data files. Version 1.1.0 (Nov 2026); see `CHANGELOG.md`.
 
 It ships one way: an **installable, offline-capable PWA** at <https://fleckeri.github.io/ship-odditer/>, built and
 deployed by GitHub Actions (`.github/workflows/deploy.yml`; Pages source "GitHub Actions"). The workflow fetches
@@ -280,8 +280,11 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   characters. User input never reaches HTML (settings are validated; the target id is checked against the data).
 - **Offline and updates.** The service worker precaches every file and serves cache-first, so the app works
   offline. `PRECACHE` maps each file to its hash (first 16 hex digits of SHA-256); the cache name is a hash of
-  those. Installing a version copies unchanged files from the old cache and downloads only the rest, so a daily data
-  update fetches `sw.js`, `data.json`, and `targets/`, not icons or fonts. Downloads use `cache: "no-cache"` (the
+  that map, names included. Each cache also stores the map it was built from (`sw-hashes.json`), so installing a
+  version copies files whose hash is unchanged from the old cache without rehashing them (caches from 1.0.0 have no
+  map; their files are hashed) and downloads only the rest: a daily data update fetches `sw.js`, `data.json`, and
+  `targets/`, not icons or fonts. An interrupted install keeps what it already checked for the next try; the fetch
+  handler reads only its own version's cache, so a half-built newer one is never served. Downloads use `cache: "no-cache"` (the
   server is always asked, so a stale HTTP-cached file can't sneak in, but a file the page just loaded costs a 304
   instead of a second download), and every file must match its hash, so a download that catches a deploy half-way
   fails. A failed install leaves the current version in charge. Each update check costs a ~400-byte 304 for `sw.js`
@@ -325,9 +328,3 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   - Needs a small protobuf reader; the response is an AuthenticatedMessage, possibly zlib (`DecompressionStream`).
   - Egg IDs are sensitive: keep them on the device only. Roughly half a day of work.
 - Menno's GitHub profile wasn't found; the credits link to the Rockets Tracker opt-in page instead.
-
-## Working with the owner
-
-Keep explanations concise and professional, with no filler praise. Cite sources for factual claims and be
-critical of online information. Say when something is uncertain. Show drafts and icons for feedback before
-finalising visual changes.

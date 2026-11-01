@@ -2,6 +2,18 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.1.0 (2026-11-01)
+
+Smaller downloads. Nothing changes on screen.
+
+- First visit downloads about 1.5 MB instead of 2.4 MB, and each daily data update about 1.1 MB instead of
+  2.0 MB: updates now fetch only the files that changed, and the first visit no longer downloads some files twice.
+- Drop data is stored as exact counts instead of rounded shares (30% smaller). Values match 1.0.0 to within its
+  rounding.
+- The first targeted view loads about 20% faster on a slow connection.
+- An update that catches a deploy half-way is refused and retried later, so files from two versions can't mix.
+- `data.json` and `targets/*.json` changed format: `d` rows are now drop counts per rarity, not parts per million.
+
 ## 1.0.0 (2026-11-01)
 
 First public release, at <https://fleckeri.github.io/ship-odditer/>.
