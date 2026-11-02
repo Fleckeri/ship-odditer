@@ -324,9 +324,12 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   (`launchesNote`), so it stays regular weight and follows the plural.
 - **Single-rarity tables.** The column for the share of an item's copies in that rarity is headed "% legendary"
   (etc.), in the rarity's colour; it was "Share of all copies". `COLW.share` went from 150 to 112 px with it.
-- **Mission Reward Simulator.** Grouped by type (Artifacts, Stones, Ingredients) in one dark box with rarity and
-  tier counts; sort Tier or Rarity; "N items · N “missions” launched" (count hidden until the second launch);
-  the Relaunch button shows the ship's icon and floats when scrolled past.
+- **Mission Reward Simulator.** Grouped by type (Artifacts, Stones, Ingredients, then Stone fragments last, in their
+  own group: `rwCat`, fragments being exactly the tier 1 stones) in one dark box with rarity and tier counts, and the
+  same groups in the list. Each group has its own wrapper (`.rg-sec`, `.rl-sec`) so its header sticks under the toolbar
+  while you scroll through it and leaves with it; the dark box is `overflow: clip` plus `min-width: 0` for the same
+  reasons as `.tier`. The list is one `<ul>` per group. Sort Tier or Rarity; "N items · N “missions” launched"
+  (count hidden until the second launch); the Relaunch button shows the ship's icon and floats when scrolled past.
 - **Nerd Stuff** (was "How to read this") at the bottom, then a three-line footer: credit and GitHub link;
   sources; data date and "Not affiliated with Auxbrain".
 - **Text style.** Oxford comma in user-facing lists. Words inside running text match it in case, size, and

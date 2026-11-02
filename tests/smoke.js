@@ -62,6 +62,27 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(Math.abs(pin.rest[0] - pin.rest[1]) < 1 && Math.abs(pin.pinned[0] - pin.pinned[2]) < 1.5 && pin.pinned[1] < pin.pinned[2],
       `${name}: column labels line up at rest and pin under the toolbar ${JSON.stringify(pin)}`);
     check(!pin.atTop && pin.stuck, `${name}: toolbar is marked stuck (edge and shadow) only once it sticks`);
+    // Simulator: groups run artifacts, stones, ingredients, then stone fragments (only tier 1 stones), the same in the
+    // tiles and the list; each group's header sticks under the toolbar while you scroll through that group
+    const sim = await p.evaluate(async () => {
+      const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const bar = () => document.getElementById('controls').getBoundingClientRect().bottom;
+      const g = [...document.querySelectorAll('#reward-grid .rg-head')].map(h => h.dataset.c), l = [...document.querySelectorAll('#reward-list .rl-head')].map(h => h.dataset.c);
+      const isFrag = id => DATA.items[id].c === 'stone' && DATA.items[id].t === 1;
+      const fragHead = document.querySelector('#reward-grid .rg-head[data-c="frag"]');
+      const fragOk = !fragHead || [...fragHead.parentElement.querySelectorAll('.rw[data-id]')].every(t => isFrag(t.dataset.id));
+      const strays = [...document.querySelectorAll('#reward-grid .rg-head:not([data-c="frag"])')].some(h => [...h.parentElement.querySelectorAll('.rw[data-id]')].some(t => isFrag(t.dataset.id)));
+      const head = document.querySelector('#reward-grid .rg-head'), lhead = document.querySelector('#reward-list .rl-head');
+      scrollBy(0, head.parentElement.getBoundingClientRect().top - bar() + 100); await frames();
+      const gh = head.getBoundingClientRect().top - bar();
+      scrollBy(0, lhead.parentElement.getBoundingClientRect().top - bar() + 40); await frames();
+      const lh = lhead.getBoundingClientRect().top - bar();
+      return { g, l, hasFrag: reward.some(([id]) => isFrag(id)), fragOk, strays, gh, lh };
+    });
+    const order = ['art', 'stone', 'ing', 'frag'].filter(c => sim.g.includes(c));
+    check(JSON.stringify(sim.g) === JSON.stringify(order) && JSON.stringify(sim.l) === JSON.stringify(sim.g) && sim.g.includes('frag') === sim.hasFrag && sim.fragOk && !sim.strays,
+      `${name}: simulator groups stone fragments last, in the tiles and the list ${JSON.stringify(sim)}`);
+    check(Math.abs(sim.gh) < 1.5 && Math.abs(sim.lh) < 1.5, `${name}: simulator group headers stick under the toolbar (${sim.gh.toFixed(1)}, ${sim.lh.toFixed(1)})`);
     if (name === 'desktop') {
       // Self-hosted fonts load (no third-party requests), and the mission card labels explain themselves
       check(await p.evaluate(async () => { await document.fonts.ready; return document.fonts.check('700 16px "Chakra Petch"') && document.fonts.check('400 15px "Atkinson Hyperlegible"'); }), 'self-hosted fonts load');
