@@ -262,7 +262,8 @@ exist and holds it there with `holdView` while the tier sections above take thei
 `canShareSheet()` (Web Share and a coarse pointer), otherwise it copies the link and flashes "Link copied" (desktops
 get a link icon). The simulator's button shares the haul as a 1080 px PNG (`drawHaul`: the mission, the tiles in list
 order with static glows from `glowSprite`, the app's eggs from the page's `.logo` paths, and the site address), always
-in the dark theme's colours; where the share sheet can't take files, or there is none, it's saved ("Save picture").
+in the dark theme's colours, with the link to the current view alongside it (`url`; apps that take only a picture
+drop it); where the share sheet can't take files, or there is none, it's saved ("Save picture").
 `haulPicture()` caches the picture per roll (`rewardSerial`) and sort, and drawing starts on `pointerdown`/hover/focus
 so the share sheet opens while the tap still counts as user activation (Safari is strict).
 

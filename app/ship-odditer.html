@@ -2131,7 +2131,9 @@ async function shareHaul(){
     const file = new File([blob], `ship-odditer-${state.ship}-haul.png`, { type: "image/png" });
     if (canShareSheet() && navigator.canShare && navigator.canShare({ files: [file] })) {
       const text = `One simulated ${mission().label.toLowerCase()} ${ship().name} launch at ${state.star}★: ${reward.length} items${legend ? `, ${legend} legendary` : ""}`;
-      try { await navigator.share({ files: [file], title: "Ship Odditer", text }); return; }
+      // With the link to this exact view, so whoever sees the picture can open the same mission (apps that take only
+      // a picture, like some photo apps, drop it)
+      try { await navigator.share({ files: [file], title: "Ship Odditer", text, url: linkURL() }); return; }
       catch (e) { if (e.name === "AbortError") return; }  // anything else (say, the tap no longer counts): save it instead
     }
     const a = document.createElement("a");

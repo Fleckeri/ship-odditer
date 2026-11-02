@@ -258,8 +258,8 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(JSON.stringify(s1) === '[true,true]', `phones share the mission's link with the share sheet ${JSON.stringify(s1)}`);
     await p.evaluate(() => document.getElementById('share-haul').scrollIntoView({ block: 'center' }));
     await p.click('#share-haul'); await p.waitForFunction(() => __shared.length === 2, null, { timeout: 10000 }).catch(() => {});
-    const s2 = await p.evaluate(async () => { const f = __shared[1] && __shared[1].files && __shared[1].files[0]; return f ? [f.type, (await createImageBitmap(f)).width] : null; });
-    check(JSON.stringify(s2) === '["image/png",1080]', `phones share the haul picture with the share sheet ${JSON.stringify(s2)}`);
+    const s2 = await p.evaluate(async () => { const f = __shared[1] && __shared[1].files && __shared[1].files[0]; return f ? [f.type, (await createImageBitmap(f)).width, __shared[1].url === linkURL()] : null; });
+    check(JSON.stringify(s2) === '["image/png",1080,true]', `phones share the haul picture, with its view's link, with the share sheet ${JSON.stringify(s2)}`);
     const buzzes = await p.evaluate(() => {
       const out = [];
       for (let i = 0; i < 6; i++) {
