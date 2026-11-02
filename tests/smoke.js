@@ -40,6 +40,26 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
       check(fit, `${name}: sliders have room (each at least 100 px wide)`);
       await p.evaluate(() => { Object.assign(state, { cat: 'art', rar: 'all' }); render(); document.getElementById('tb-toggle').click(); });
     }
+    // Column labels pin under the toolbar while a table scrolls by: at rest the copy sits exactly over the real label
+    // row (below the "Any rarity" band); scrolled, it stays just under the toolbar while the real row goes under it
+    const pin = await p.evaluate(async () => {
+      const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      Object.assign(state, { ship: 'atreggies', len: 2, star: 8, target: 'none', cat: 'art', rar: 'all' }); render();
+      await new Promise(r => setTimeout(r, 1200));  // let "keep your place" finish
+      scrollTo(0, 0); await frames();
+      // Every tier card stays inside the page's margins (seen on screen, so none is skipped by content-visibility)
+      const box = document.getElementById('tiers').getBoundingClientRect(); let over = 0;
+      for (const t of document.querySelectorAll('#tiers > section.tier')) { t.scrollIntoView(); await frames(); over = Math.max(over, t.getBoundingClientRect().right - box.right); }
+      const sec = document.querySelector('#tiers section.tier[data-t="1"]'), real = sec.querySelector(':scope > .scroll thead tr:last-child'), copy = sec.querySelector('.pin tr');
+      const bar = () => document.getElementById('controls').getBoundingClientRect().bottom;
+      scrollBy(0, real.getBoundingClientRect().top - bar() - 100); await frames();
+      const rest = [copy.getBoundingClientRect().top, real.getBoundingClientRect().top];
+      scrollBy(0, 300); await frames();
+      return { rest, pinned: [copy.getBoundingClientRect().top, real.getBoundingClientRect().top, bar()], over, atTop, stuck: document.getElementById('controls').classList.contains('stuck') };
+    });
+    check(pin.over <= 0.5, `${name}: tier tables stay inside the page margins (${pin.over.toFixed(1)} px over)`);
+    check(Math.abs(pin.rest[0] - pin.rest[1]) < 1 && Math.abs(pin.pinned[0] - pin.pinned[2]) < 1.5 && pin.pinned[1] < pin.pinned[2],
+      `${name}: column labels line up at rest and pin under the toolbar ${JSON.stringify(pin)}`);
     if (name === 'desktop') {
       // Self-hosted fonts load (no third-party requests), and the mission card labels explain themselves
       check(await p.evaluate(async () => { await document.fonts.ready; return document.fonts.check('700 16px "Chakra Petch"') && document.fonts.check('400 15px "Atkinson Hyperlegible"'); }), 'self-hosted fonts load');

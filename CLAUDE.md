@@ -218,6 +218,16 @@ compact breakpoint (`max-width:820px` or `max-height:520px`) it shrinks to a 50 
 crosshair is hidden (the row keeps its green tint and bar). While a table is scrolled sideways (`.scroll.scrolled`, set by a capturing scroll
 listener on `#tiers`), a hairline and soft shadow mark the pinned column's edge.
 
+**Pinned column labels.** The scroll box around each table can't stick its header to the page (a sticky element
+sticks to its nearest scroll box), so each section has a `.pin` before the table: a zero-height `position: sticky`
+strip holding a copy of the label row only (`labels`; not the "Any rarity / Common…" band, whose colours are enough),
+`aria-hidden` with its `tabindex`es removed. At rest it sits exactly over the real row (lowered by `--band`, the band
+row's height, from `measureBand`); scrolled, it stays under the toolbar (`--pin-top`, the toolbar's height from a
+ResizeObserver) and is clipped where the section ends, which is why `.tier` is `overflow: clip`, not `hidden` (a
+hidden box is a scroll container and would capture the sticking). Not being a scroll container, `.tier` also
+needs `min-width: 0`: as a grid item it would otherwise grow to its table's full width, past the page's margins. The scroll listener copies the table's
+`scrollLeft` to it. CSS sticky keeps it smooth on iOS, where moving it from a scroll handler would lag a frame.
+
 **Motion.** `snapRows`/`flipRows` slide table rows (FLIP) and ease section heights (`FLIP_MS` 300);
 `snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch. Everything respects
 `prefers-reduced-motion`.

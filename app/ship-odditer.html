@@ -272,7 +272,9 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 .len-dot.rdA{background:conic-gradient(var(--common) 0 25%, var(--rare) 0 50%, var(--epic) 0 75%, var(--legend) 0)}
 
 /* Tiers */
-.tier{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tier{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;overflow:clip;min-width:0}  /* clip: a
+   hidden box is a scroll container, and the pinned label row (.pin) would stick to it instead of to the page. Not
+   being one, it needs min-width:0, or as a grid item it grows to its table's full width past the page's margins */
 .tier-head{display:grid;gap:6px;padding:14px 16px;border-bottom:1px solid var(--line)}
 .tier-n{font-family:var(--font-body);font-size:var(--fs-text);font-weight:400;letter-spacing:0}  /* "· 12 artifacts" after the tier name */
 .summary{font-size:var(--fs-text);color:var(--muted)}  /* always with .dots, which lays it out */
@@ -281,6 +283,14 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 /* A value's note, e.g. "(1.2 years)", is ordinary text again */
 .summary b .aft,.card-foot b .aft{font-size:calc(1em / var(--inline-k));font-weight:400}
 .scroll{overflow-x:auto;overflow-y:hidden}  /* sideways only: a scroll box would otherwise scroll a pixel or two up and down too */
+/* Pinned column labels. A table's scroll box can't stick its header to the page (it would stick inside the box), so a
+   copy of the label row rides in a zero-height sticky strip just above the table. Lowered past the "Any rarity /
+   Common…" band (not copied; its colours carry it), it sits exactly over the real row, then stays under the toolbar
+   while the rows scroll by; the section's clip cuts it off where the table ends. --pin-top is the toolbar's height
+   and --band the band row's, both set from script; the copy follows the table's sideways scroll. */
+.pin{position:sticky;top:calc(env(safe-area-inset-top, 0px) + var(--pin-top, 0px) - var(--band-off, 0px));height:0;z-index:2}
+.tier:has(thead tr.band) .pin{--band-off:var(--band, 0px)}
+.pin > .scroll{overflow:hidden;transform:translateY(var(--band-off, 0px))}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 /* Tier tables share one column plan (a <colgroup> from render) with fixed layout, so every tier's columns line
    up and long names wrap instead of widening a table. Only the item column flexes, down to --name-w (narrower
@@ -1271,10 +1281,16 @@ function wire(){
   const relaunch = e => { launches++; rollReward(); renderReward(); rumble(e.currentTarget); };
   $("reroll").addEventListener("click", relaunch);
   $("reroll-float").addEventListener("click", relaunch);
-  // Tables scrolled sideways show a divider beside the pinned item column (scroll doesn't bubble, so capture it)
+  // Tables scrolled sideways show a divider beside the pinned item column, and carry their pinned label row along
+  // (scroll doesn't bubble, so capture it)
   $("tiers").addEventListener("scroll", e => {
-    const sc = e.target; if (sc.classList && sc.classList.contains("scroll")) sc.classList.toggle("scrolled", sc.scrollLeft > 0);
+    const sc = e.target; if (!(sc.classList && sc.classList.contains("scroll"))) return;
+    sc.classList.toggle("scrolled", sc.scrollLeft > 0);
+    const pin = sc.previousElementSibling; if (pin && pin.classList.contains("pin")) pin.firstElementChild.scrollLeft = sc.scrollLeft;
   }, { capture: true, passive: true });
+  // Pinned label rows sit just under the sticky toolbar, whatever its height (it wraps, folds, and opens)
+  new ResizeObserver(() => document.documentElement.style.setProperty("--pin-top", $("controls").offsetHeight + "px")).observe($("controls"));
+  document.fonts.ready.then(measureBand);
   $("tb-toggle").addEventListener("click", () => {
     const open = $("controls").classList.toggle("open");
     $("tb-toggle").setAttribute("aria-expanded", String(open));
@@ -1372,6 +1388,13 @@ function renderTop(sh, m, s){
     : `<span>Reaching <b>${N("p|s", s, "int")}★</b> from scratch: <b>${N("p|runs", runs, "int")}</b> ${m.label.toLowerCase()} runs <span class="nw">(${N("p|need", need, "int")} launch points)</span></span><span>From <b>${N("p|s1", s - 1, "int")}★</b>: <b>${N("p|step", stepRuns, "int")}</b> runs</span>`}</div>`);
 }
 
+// The "Any rarity / Common…" band row's height, which the pinned label rows skip (one font and size, so one value)
+function measureBand(){
+  const band = $("tiers").querySelector("thead tr.band");
+  const h = band && band.getBoundingClientRect().height;
+  if (h) $("tiers").style.setProperty("--band", h + "px");
+}
+
 function render(){
   const view = pickAnchor();
   if (!DATA.ships.some(s => s.id === state.ship)) state.ship = "atreggies";
@@ -1462,13 +1485,13 @@ function render(){
     const odds = `<span class="odds-txt">${state.odds}</span>% in`;
     const notYet = inTier.filter(id => !(lam(id, r, s) > 0) && everAt(id)).map(itemTag);
 
-    let head, body;
+    let head, labels, body;
     const cols = colPlan(isArt, r, sh);
     // The odds column's explainer is built when shown, so it always names the current odds
     const TH = (cls, key, text, extra = "") => `<th class="${cls}" scope="col" ${key === "half" ? `data-tipk="half" data-tipr="${extra}"` : `data-tip="${colTip(key, extra)}"`} tabindex="0">${text}</th>`;
     if (r === "all") {
-      head = (isArt ? `<tr class="band"><td></td><th class="rA" colspan="3" scope="colgroup" data-tip="${colTip("any")}" tabindex="0">Any rarity</th>${RCOLS.map(j => `<th class="r${j} b${j}" colspan="2" scope="colgroup" data-tip="${colTip("band", RARITIES[j])}" tabindex="0">${RARITIES[j]}</th>`).join("")}<td></td></tr>` : "") +
-        `<tr>${TH("", "item", "Item")}${TH("", "per", "Per launch")}${TH("", "p1", "P(≥1)")}${TH("", "half", odds)}${RCOLS.map(j => TH("b" + j, "p1", "P(≥1)", RARITIES[j]) + TH("b" + j, "half", odds, RARITIES[j])).join("")}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
+      labels = `<tr>${TH("", "item", "Item")}${TH("", "per", "Per launch")}${TH("", "p1", "P(≥1)")}${TH("", "half", odds)}${RCOLS.map(j => TH("b" + j, "p1", "P(≥1)", RARITIES[j]) + TH("b" + j, "half", odds, RARITIES[j])).join("")}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
+      head = (isArt ? `<tr class="band"><td></td><th class="rA" colspan="3" scope="colgroup" data-tip="${colTip("any")}" tabindex="0">Any rarity</th>${RCOLS.map(j => `<th class="r${j} b${j}" colspan="2" scope="colgroup" data-tip="${colTip("band", RARITIES[j])}" tabindex="0">${RARITIES[j]}</th>`).join("")}<td></td></tr>` : "") + labels;
       body = rows.map(id => {
         const la = lam(id, "all", s), le = lamEff(id, "all", s), ra = rough(id, "all", s);
         return `<tr data-id="${id}"${isTgt(id) ? ' class="tgt"' : ""}>${itemCell(id)}<td${ra}>${N(id + "|per|A", la, "num")}</td><td${ra}>${N(id + "|p|A", P(le), "pct")}</td><td${ra}>${N(id + "|k|A", kAt(le), "k")}</td>${
@@ -1476,7 +1499,7 @@ function render(){
         }<td>${strip(id, "all")}</td></tr>`;
       }).join("");
     } else {
-      head = `<tr>${TH("", "item", "Item")}${TH("b" + r, "per", "Per launch", RARITIES[r])}${TH(`r${r} b${r}`, "p1", `${RARITIES[r]} P(≥1)`, RARITIES[r])}${TH("b" + r, "half", odds, RARITIES[r])}${TH(`r${r}`, "share", `% ${RARITIES[r].toLowerCase()}`, RARITIES[r])}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
+      head = labels = `<tr>${TH("", "item", "Item")}${TH("b" + r, "per", "Per launch", RARITIES[r])}${TH(`r${r} b${r}`, "p1", `${RARITIES[r]} P(≥1)`, RARITIES[r])}${TH("b" + r, "half", odds, RARITIES[r])}${TH(`r${r}`, "share", `% ${RARITIES[r].toLowerCase()}`, RARITIES[r])}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
       body = rows.map(id => {
         const l = lam(id, r, s), le = lamEff(id, r, s), part = l / lam(id, "all", s);
         return `<tr data-id="${id}"${isTgt(id) ? ' class="tgt"' : ""}>${itemCell(id)}<td${rough(id, r, s, `b${r}`)}>${N(`${id}|per|${r}`, l, "num")}</td><td${rough(id, r, s, `r${r} b${r}`)}>${N(`${id}|p|${r}`, P(le), "pct")}</td><td${rough(id, r, s, `b${r}`)}>${N(`${id}|k|${r}`, kAt(le), "k")}</td><td class="dim">${N(`${id}|sh|${r}`, part, "pct")}</td><td>${strip(id, r)}</td></tr>`;
@@ -1491,11 +1514,13 @@ function render(){
         </div>
         ${notYet.length ? `<div class="summary dots"><span>Not dropping${rarLabel ? " as " + rarLabel.trim() : ""} at ${s}★: ${notYet.join(", ")}</span></div>` : ""}
       </div>
+      <div class="pin" aria-hidden="true"><div class="scroll"><table style="--cols:${cols.cols}px">${cols.html}<thead>${labels.replace(/ tabindex="0"/g, "")}</thead></table></div></div>
       <div class="scroll"><table aria-labelledby="h-t${t}" style="--cols:${cols.cols}px">${cols.html}<thead>${head}</thead><tbody>${body}</tbody></table></div>
     </section>`);
   }
   const before = snapRows();
   $("tiers").innerHTML = out.join("");
+  measureBand();
   for (const sec of $("tiers").children) sec._stripCap = capAt(s);
   observeBlocks();
   flipRows(before);
