@@ -595,7 +595,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
         <output id="ftl-out" for="ftl"></output>
       </div>
       <div class="tb-slider">
-        <label for="odds" id="odds-label" data-tip="&lt;b&gt;Target odds&lt;/b&gt;&lt;br&gt;The chance you want of getting at least one copy. Sets the &lt;i&gt;N% in&lt;/i&gt; columns and the tier &lt;i&gt;Launches to have N% chance&lt;/i&gt; estimates.">Odds</label>
+        <label for="odds" id="odds-label" data-tip="&lt;b&gt;Target odds&lt;/b&gt;&lt;br&gt;The chance you want of getting at least one copy. Sets the &lt;i&gt;N% in&lt;/i&gt; columns and the tier summaries' &lt;i&gt;At N% odds&lt;/i&gt; launch counts.">Odds</label>
         <input type="range" id="odds" min="1" max="99" step="1" value="50">
         <output id="odds-out" for="odds"></output>
       </div>
@@ -653,7 +653,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
       <li>Drop shares come from player-logged missions (mixed research levels) and are assumed not to depend on capacity.</li>
       <li><b>Per launch</b>: average copies of the item, in the shown rarity, from one launch (its share of logged drops × capacity). <b>P(≥1)</b>: the chance one launch returns at least one; each of the <i>capacity</i> items is drawn independently, so it's 1 − (1 − share)<sup>capacity</sup>. <b><span class="odds-txt">50</span>% in</b>: launches for a <span class="odds-txt">50</span>% chance of at least one. Set the odds with the Odds slider.</li>
       <li><span class="t-rare">Rare</span>, <span class="t-epic">epic</span>, and <span class="t-legend">legendary</span> versions have stone slots. Stones, fragments, and ingredients only come in common.</li>
-      <li>Tier summaries: "Odds of all … in single launch" is the chance one launch has every listed item. "… getting everything" is the launches needed to have seen them all at your odds; the rarest item dominates it. "… getting target" does the same for the target's item, or says when it doesn't drop there.</li>
+      <li>Tier summaries: "All in one launch" is the chance one launch has every listed item. "At <span class="odds-txt">50</span>% odds: all in …" is the launches needed to have seen them all at your odds; the rarest item dominates it. "… target in …" does the same for the target's item, or says when it doesn't drop there.</li>
       <li>The strip shows P(≥1) at each star level; the outlined cell is the selected level.</li>
       <li><svg class="tgt-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg><b class="icon-text">Target</b> uses only drops logged with that target set. The game doesn't publish how targeting works, and the boost varies widely, so nothing is estimated. Only the Quintillion Chicken and later can target. The count beside each target in the list is how many items were logged with it for this ship, length, and star level; "no data at N★" means none yet. Stone fragments are hidden: targeting them is almost never worthwhile (a poor return, and lower odds of tier 2–4 stones), so consume artifacts for fragments instead.</li>
       <li>Capacity = (base + per-star bump × stars) × (1 + 5% × Zero-G level), × 2 or × 3 during a capacity event, rounded down. FTL cuts mission time 1% per level, from the Quintillion Chicken up; it changes days, not drops. Quality runs from the mission's minimum to its maximum plus the per-star bump.</li>
@@ -794,7 +794,7 @@ function fmtDur(sec){
    column takes what's left, but never less than --name-w in the CSS (170 px, or just the icon on small screens).
    Sized from a sweep of every view on macOS, plus ~4 px of headroom: Linux and Windows render the same fonts
    slightly wider. */
-const COLW = { per: 88, p: 76, k: 78, pR: 136, kR: 96, share: 150 };
+const COLW = { per: 88, p: 76, k: 78, pR: 136, kR: 96, share: 112 };
 function colPlan(isArt, r, sh){
   const stripW = Math.max((sh.maxStars + 1) * 11 + 18, 90);  // 9px cells + 2px gaps + padding; fits the "0★ → N★" header
   const w = r === "all" ? [COLW.per, COLW.p, COLW.k, ...(isArt ? [0, 1, 2, 3].flatMap(() => [COLW.p, COLW.k]) : []), stripW]
@@ -832,6 +832,10 @@ function fmtDurFull(sec){  // fixed shape: every unit below the largest, two dig
   return d ? `${d}d ${pad2(h)}h ${pad2(m)}m` : h ? `${h}h ${pad2(m)}m` : `${m}m`;
 }
 const whenMain = days => days < 1 ? (h => `${h} hour${h === 1 ? "" : "s"}`)(Math.max(1, Math.round(days * 24))) : days < 60 ? days.toFixed(1) + " days" : Math.round(days) + " days";
+// "412 launches (130.0 days)" after a bold count: the word rides in the note, so it stays regular weight and follows
+// the count's plural
+const launchesNote = k => ` launch${Math.max(1, Math.round(k)) === 1 ? "" : "es"}${launchNote(k)}`;
+const oddsAt = () => `At <span class="odds-txt">${state.odds}</span>% odds`;
 const whenNote = days => days >= 60 ? ` (${(days / 30.44).toFixed(1)} months)` : "";
 const FMT = {
   int: x => Math.round(x).toLocaleString(),
@@ -1417,19 +1421,22 @@ function render(){
   const rarLabel = rarWord ? rarWord + " " : "";
   const allIds = new Set();
   for (let k = 0; k <= sh.maxStars; k++) { const Lk = level(k); if (Lk) for (const id of Object.keys(Lk.d)) allIds.add(id); }
-  // "Launches to have N% chance of getting target" for the target's item in tier t, shown when the target belongs in this table.
-  // When that item doesn't drop here (in the selected rarity) at this star level, the line says so instead.
+  // The target's item in tier t, when the target belongs in this table: ", target in N" to follow "At N% odds: all in N",
+  // or, when that item doesn't drop here (in the selected rarity) at this star level, its own item saying so.
+  // `own`: a line of its own, for tiers with no table.
   const tgtLine = (t, own) => {
     const tid = tgtItem(t);
     if (!tid || TGT_CAT[DATA.targets[curTgt].k] !== state.cat) return "";
     const le = lamEff(tid, r, s), k = le > 0 ? launchesToSeeAll([le], state.odds / 100) : null;
     const tgtWord = `${TGT_GLYPH}<span class="icon-text">target</span>`;
     let line;
-    if (k != null) line = `<span>Launches to have <span class="odds-txt">${state.odds}</span>% chance of getting ${tgtWord}: <b>${N(`t${t}|tgt`, k, "launch", launchNote(k))}</b></span>`;
-    else {
+    if (k != null) {
+      const part = `${tgtWord} in <b>${N(`t${t}|tgt`, k, "launch", launchNote(k))}</b>`;
+      return own ? `<div class="summary dots"><span>${oddsAt()}: ${part}</span></div>` : `, ${part}`;
+    } else {
       let ever = false; for (let j = 0; j <= sh.maxStars && !ever; j++) ever = lam(tid, r, j) > 0;
       const as = rarLabel ? " as " + rarLabel.trim() : "";
-      line = `<span>${tgtWord.replace(">target<", ">Target<")} ${ever ? `doesn't drop${as} at ${s}★` : `never drops${as} from this mission`}</span>`;
+      line = `<span>${tgtWord.replace(">target<", ">Target<")} ${ever ? `doesn't drop${as} at ${s}★` : `never drops${as} here`}</span>`;
     }
     return own ? `<div class="summary dots">${line}</div>` : line;
   };
@@ -1451,7 +1458,7 @@ function render(){
     const allOne = lams.reduce((p, l) => p * P(l), 1);
     // Launches for the selected odds of having seen everything in this tier
     const kAll = launchesToSeeAll(lams, state.odds / 100);
-    const seeAll = `<b>${N(`t${t}|see`, kAll, "launch", kAll == null ? null : launchNote(kAll))}</b>`;
+    const seeAll = `<b>${N(`t${t}|see`, kAll, "launch", kAll == null ? null : launchesNote(kAll))}</b>`;
     const odds = `<span class="odds-txt">${state.odds}</span>% in`;
     const notYet = inTier.filter(id => !(lam(id, r, s) > 0) && everAt(id)).map(itemTag);
 
@@ -1469,7 +1476,7 @@ function render(){
         }<td>${strip(id, "all")}</td></tr>`;
       }).join("");
     } else {
-      head = `<tr>${TH("", "item", "Item")}${TH("b" + r, "per", "Per launch", RARITIES[r])}${TH(`r${r} b${r}`, "p1", `${RARITIES[r]} P(≥1)`, RARITIES[r])}${TH("b" + r, "half", odds, RARITIES[r])}${TH("", "share", "Share of all copies", RARITIES[r])}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
+      head = `<tr>${TH("", "item", "Item")}${TH("b" + r, "per", "Per launch", RARITIES[r])}${TH(`r${r} b${r}`, "p1", `${RARITIES[r]} P(≥1)`, RARITIES[r])}${TH("b" + r, "half", odds, RARITIES[r])}${TH(`r${r}`, "share", `% ${RARITIES[r].toLowerCase()}`, RARITIES[r])}${TH("", "strip", `0★ → ${sh.maxStars}★`)}</tr>`;
       body = rows.map(id => {
         const l = lam(id, r, s), le = lamEff(id, r, s), part = l / lam(id, "all", s);
         return `<tr data-id="${id}"${isTgt(id) ? ' class="tgt"' : ""}>${itemCell(id)}<td${rough(id, r, s, `b${r}`)}>${N(`${id}|per|${r}`, l, "num")}</td><td${rough(id, r, s, `r${r} b${r}`)}>${N(`${id}|p|${r}`, P(le), "pct")}</td><td${rough(id, r, s, `b${r}`)}>${N(`${id}|k|${r}`, kAt(le), "k")}</td><td class="dim">${N(`${id}|sh|${r}`, part, "pct")}</td><td>${strip(id, r)}</td></tr>`;
@@ -1479,9 +1486,8 @@ function render(){
       <div class="tier-head">
         <h2 id="h-t${t}">Tier ${t} <span class="dim tier-n">· ${N(`t${t}|n`, rows.length, "int")} ${rarLabel}${label}</span></h2>
         <div class="summary dots">
-          <span>Odds of all ${rarLabel}${label} in single launch: <b>${N(`t${t}|all`, allOne, "pct")}</b></span>
-          <span>Launches to have <span class="odds-txt">${state.odds}</span>% chance of getting everything: ${seeAll}</span>
-          ${tgtLine(t)}
+          <span>All in one launch: <b>${N(`t${t}|all`, allOne, "pct")}</b></span>
+          ${(tg => `<span>${oddsAt()}: all in ${seeAll}${tg.startsWith(",") ? tg + "</span>" : "</span>" + tg}`)(tgtLine(t))}
         </div>
         ${notYet.length ? `<div class="summary dots"><span>Not dropping${rarLabel ? " as " + rarLabel.trim() : ""} at ${s}★: ${notYet.join(", ")}</span></div>` : ""}
       </div>
@@ -1529,7 +1535,7 @@ function valueFor(key, ids, r, s){
     }
     const lams = ids.map(id => lamEff(id, r, s));
     if (parts[1] === "all") return lams.reduce((p, l) => p * P(l), 1);
-    if (parts[1] === "see") { const k = launchesToSeeAll(lams, state.odds / 100); return k == null ? undefined : [k, launchNote(k)]; }
+    if (parts[1] === "see") { const k = launchesToSeeAll(lams, state.odds / 100); return k == null ? undefined : [k, launchesNote(k)]; }
     return undefined;
   }
   const col = parts[parts.length - 2], rr = parts[parts.length - 1], id = parts.slice(0, -2).join("|");

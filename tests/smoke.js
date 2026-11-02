@@ -56,8 +56,8 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
       // The target's rows are marked, each tier says how many launches to see it, and a tier where it never drops says so
       const marks = await p.evaluate(() => [...document.querySelectorAll('#tiers tr.tgt')].map(tr => [tr.dataset.id, !!tr.querySelector('.tgt-mark')]));
       check(marks.length > 0 && marks.every(([id, m]) => id.startsWith('book-of-basan-') && m), `target rows highlighted and marked ${JSON.stringify(marks)}`);
-      const lines = await p.evaluate(() => [...document.querySelectorAll('#tiers section.tier')].map(sec => [...sec.querySelectorAll('.summary span')].find(x => /chance of getting target|target (never drops|doesn't drop)/i.test(x.textContent))?.textContent.replace(/\s+/g, ' ').trim() || ''));
-      check(lines.every(Boolean) && lines.some(l => /^Target never drops from this mission$/.test(l)), `each tier has a target line ${JSON.stringify(lines)}`);
+      const lines = await p.evaluate(() => [...document.querySelectorAll('#tiers section.tier')].map(sec => [...sec.querySelectorAll('.summary span')].find(x => /target in \d|target (never drops|doesn't drop)/i.test(x.textContent))?.textContent.replace(/\s+/g, ' ').trim() || ''));
+      check(lines.every(Boolean) && lines.some(l => /^Target never drops here$/.test(l)), `each tier has a target line ${JSON.stringify(lines)}`);
       const k0 = await p.evaluate(() => document.querySelector('[data-k="t3|tgt"]').dataset.v);
       await p.evaluate(() => { const o = document.getElementById('zerog'); o.value = 0; o.dispatchEvent(new Event('input')); });
       await p.evaluate(() => document.querySelector('[data-k="t3|tgt"]').scrollIntoView());  // off-screen tables catch up when seen

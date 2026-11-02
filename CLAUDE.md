@@ -157,9 +157,9 @@ download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails 
   The explorer's optimizer uses the Poisson shortcut `1 − e^(−lam)`; they differ a lot for tiny early ships
   (Chicken One: 91.0% vs exact 95.4%), so keep `lamEff`.
 - **Launches for the target odds q**: `kAt = −ln(1 − q) / lamEff`.
-- **"Odds of all … in single launch"** = product of per-item P. **"Launches to have N% chance of getting
-  everything"** = smallest k with `Π(1 − e^(−k·lamEff_i)) ≥ q` (binary search). Both treat items as independent,
-  which is slightly optimistic. **"… getting target"** is the same for the target's item in that tier.
+- **"All in one launch"** = product of per-item P. **"At N% odds: all in k launches"** = smallest k with
+  `Π(1 − e^(−k·lamEff_i)) ≥ q` (binary search). Both treat items as independent, which is slightly optimistic.
+  **"… target in k"** is the same for the target's item in that tier.
 - **Rough values**: cells resting on < 5 sightings (`seen() < ROUGH`) get class `rough` (faded, dotted underline)
   and "≈" before the number in tooltips. The explorer's optimizer zeroes legendary buckets under 5 observations.
 - **Sample size**: `SMALL_SAMPLE` = 200,000 items. Below it the "Warning: Small Sample Size" box shows (and the
@@ -306,9 +306,12 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   drawer hanging from the button: one card, the button's bottom edge dashed, sliding in (not with reduced motion).
 - **Mission card.** Capacity, Time, and Quality labels have dotted underlines and explainer tooltips. Captions
   under the card use "·" separators.
-- **Tier summaries.** Only the selected odds: "Odds of all … in single launch", "Launches to have N% chance of
-  getting everything", and with a target "… getting target" (or, where it can't drop, "⌖ TARGET never drops from
-  this mission" / "doesn't drop as rare at 3★"), with "·" between them on a line.
+- **Tier summaries.** Kept short (owner, Nov 2026): "All in one launch: 0.02%" · "At 50% odds: all in 412 launches
+  (130.0 days), ⌖ target in 12 (4.0 days)", the odds said once. Where the target can't drop, its own item follows:
+  "⌖ Target never drops here" / "doesn't drop as rare at 3★". The word "launches" rides in the count's note
+  (`launchesNote`), so it stays regular weight and follows the plural.
+- **Single-rarity tables.** The column for the share of an item's copies in that rarity is headed "% legendary"
+  (etc.), in the rarity's colour; it was "Share of all copies". `COLW.share` went from 150 to 112 px with it.
 - **Mission Reward Simulator.** Grouped by type (Artifacts, Stones, Ingredients) in one dark box with rarity and
   tier counts; sort Tier or Rarity; "N items · N “missions” launched" (count hidden until the second launch);
   the Relaunch button shows the ship's icon and floats when scrolled past.
