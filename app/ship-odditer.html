@@ -85,8 +85,8 @@ h2{font-size:var(--fs-h2);font-weight:600}
 .brand-text{min-width:0}
 .subtitle{margin:2px 0 0;font-family:var(--font-display);font-size:var(--fs-h3);font-weight:500;color:var(--muted);letter-spacing:.02em}
 .theme-wrap{position:relative;margin-left:auto}
-.theme-flash{position:absolute;right:calc(100% + 8px);top:50%;margin-top:-.85em;z-index:5;font-size:var(--fs-small);line-height:1.3;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease}
-.theme-flash.show{opacity:1;transform:none}
+.theme-flash,.share-flash{position:absolute;right:calc(100% + 8px);top:50%;margin-top:-.85em;z-index:5;font-size:var(--fs-small);line-height:1.3;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease}
+.theme-flash.show,.share-flash.show{opacity:1;transform:none}
 .theme-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;padding:0}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent)}
 .theme-btn svg{width:22px;height:22px;display:block}
@@ -103,6 +103,15 @@ h2{font-size:var(--fs-h2);font-weight:600}
 .hero .tgt-badge svg{position:absolute;inset:0;width:100%;height:100%}
 .hero .tgt-badge img{position:relative;width:22px;height:22px;filter:none}
 .hero h2{font-size:var(--fs-hero);color:var(--space-fg)}
+/* Share this mission: a round button in the card's top-right corner (the text column keeps clear of it) */
+.hero{position:relative}
+.hero-text{min-width:0;padding-right:34px}
+.share-wrap{position:absolute;top:8px;right:8px}
+.share-btn{display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:50%;cursor:pointer;color:var(--space-fg);
+  background:color-mix(in srgb, var(--space-fg) 10%, transparent);border:1px solid color-mix(in srgb, var(--space-fg) 22%, transparent);transition:background .15s,border-color .15s}
+.share-btn:hover{background:color-mix(in srgb, var(--space-fg) 18%, transparent);border-color:color-mix(in srgb, var(--space-fg) 45%, transparent)}
+.share-btn:focus-visible{outline:2px solid var(--space-fg);outline-offset:2px}
+.share-btn svg{width:17px;height:17px}
 .hero .stats{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:var(--fs-text);opacity:.92;margin-top:4px}
 .hero .stats b{font-variant-numeric:tabular-nums}
 .hero .stats .dim{color:inherit;opacity:.7}
@@ -202,6 +211,7 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
   .tb-slider input[type=range]{height:32px;--tw:22px}
   .linkbtn{min-height:40px;padding:8px 14px}
   .theme-btn{width:44px;height:44px}
+  .share-btn{width:40px;height:40px} .share-wrap{top:6px;right:6px}
 }
 /* Phones in portrait, and short landscape screens: a compact sticky toolbar.
    Everything folds behind a summary button. Open, it shows the dropdowns (Stars, Items, and Rarity become
@@ -387,7 +397,11 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 .reward{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
 .reward-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px 20px}
 .reward-sub{margin:4px 0 0;color:var(--muted);font-size:var(--fs-text);max-width:72ch}
-.reroll-box{display:grid;justify-items:end}
+.reroll-box{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+/* Share the haul as a picture (or save it, where there's no share sheet) */
+.haul-btn{display:inline-flex;align-items:center;gap:6px}
+.haul-btn svg{width:16px;height:16px;flex:none}
+.haul-btn[aria-busy="true"]{opacity:.6;cursor:progress}
 .launch-count{color:var(--muted);font-variant-numeric:tabular-nums;opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s}
 .launch-count.show{opacity:1;visibility:visible;transition:opacity .3s ease}
 .launch-count .sep{margin-right:8px}
@@ -547,10 +561,14 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
         <img id="ship-img" alt="" width="96" height="96">
         <span class="tgt-badge" id="hero-tgt" role="img" hidden><img alt="" width="22" height="22"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-3.2M5.2 12H2M12 5.2V2M12 22v-3.2"/></svg></span>
       </div>
-      <div style="min-width:0">
+      <div class="hero-text">
         <div class="label" style="color:inherit;opacity:.75" id="hero-kicker">Mission</div>
         <h2 id="hero-title">Loading drop data…</h2>
         <div class="stats" id="hero-stats"></div>
+      </div>
+      <div class="share-wrap">
+        <span class="share-flash" id="share-flash" aria-live="polite"></span>
+        <button type="button" class="share-btn" id="share-link" aria-label="Share this mission"></button>
       </div>
     </div>
     <div class="card-foot" id="foot-facts"></div>
@@ -650,6 +668,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
         <p class="reward-sub" id="reward-sub">One simulated return for the selected ship, length, and star level.</p>
       </div>
       <div class="reroll-box">
+        <button type="button" class="linkbtn haul-btn" id="share-haul" hidden></button>
         <button type="button" class="linkbtn fab" id="reroll">Relaunch</button>
       </div>
     </div>
@@ -720,6 +739,60 @@ const saveNow = () => { try { localStorage.setItem("mission-odds", JSON.stringif
 let saveTimer = 0;
 const save = () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); };
 addEventListener("pagehide", saveNow);
+
+/* Links: every setting as a short code, e.g. #a280a0a1o1e0, so a shared link opens exactly that view. Fixed-width
+   base-36 fields, in order: ship (its place in the list, the game's own order) 1, length 1, stars 1, target (afx id, or
+   "--" for none) 2, items and rarity 1, Zero-G 1, FTL 2, odds 2, capacity event and simulator sort 1. A shorter code
+   sets only the fields it has and keeps the rest, so a home-screen shortcut (#92: Henerprise, extended) keeps your stars,
+   target, and research. #sim goes to the simulator. Values are checked; anything unknown changes nothing. A link is
+   applied, saved like any change, and then cleared from the address bar (consumeLink), so the address stays clean;
+   a reload or bookmark opens the saved settings anyway. New fields go at the end: shared links and installed shortcuts
+   carry these, and their order is the format. */
+const LINK_CATS = ["art", "stone", "ing"];
+const b36 = (n, w) => n.toString(36).padStart(w, "0");
+function linkCode(){
+  return b36(DATA.ships.findIndex(s => s.id === state.ship), 1) + state.len + b36(state.star, 1)
+    + (DATA.targets[state.target] ? b36(+state.target, 2) : "--")  // kept on ships that can't target, like the choice itself
+    + b36(LINK_CATS.indexOf(state.cat) * 5 + (state.rar === "all" ? 0 : state.rar + 1), 1)
+    + b36(state.zerog, 1) + b36(state.ftl, 2) + b36(state.odds, 2) + b36((state.dcap - 1) * 2 + (state.sort === "rarity"), 1);
+}
+const linkURL = () => location.origin + location.pathname + "#" + linkCode();
+function readLink(){
+  const code = location.hash.slice(1).toLowerCase();
+  if (code === "sim") return "sim";
+  let at = 0;
+  const take = w => { const f = code.slice(at, at += w); return f.length === w ? f : null; };
+  const num = w => { const f = take(w); return f && /^[0-9a-z]+$/.test(f) ? parseInt(f, 36) : null; };
+  const sh = DATA.ships[num(1)]; if (sh) state.ship = sh.id;
+  const len = num(1); if (len != null && len <= 2) state.len = len;
+  const star = num(1); if (star != null) state.star = star;  // render() caps it at the ship's top star level
+  const t = take(2); if (t === "--") state.target = "none"; else if (t && /^[0-9a-z]{2}$/.test(t) && DATA.targets[parseInt(t, 36)]) state.target = String(parseInt(t, 36));
+  const tb = num(1); if (tb != null && tb < 15) { state.cat = LINK_CATS[Math.floor(tb / 5)]; state.rar = tb % 5 ? tb % 5 - 1 : "all"; }
+  const zg = num(1); if (zg != null && zg <= 10) state.zerog = zg;
+  const ftl = num(2); if (ftl != null && ftl <= 60) state.ftl = ftl;
+  const odds = num(2); if (odds != null && odds >= 1 && odds <= 99) state.odds = odds;
+  const ex = num(1); if (ex != null && ex < 6) { state.dcap = (ex >> 1) + 1; state.sort = ex & 1 ? "rarity" : "tier"; }
+  return null;
+}
+function consumeLink(){
+  const view = readLink();
+  if (location.hash) {
+    saveNow();  // the link is gone from the address once cleared, so keep its settings right away
+    try { history.replaceState(history.state, "", location.pathname + location.search); } catch (e) {}
+  }
+  return view;
+}
+// A link's view, once the tables exist: the simulator, just under the toolbar. Held there while the tables above it,
+// never laid out until now (content-visibility), take their real heights.
+function goView(view){
+  if (view !== "sim") return;
+  afterTables(() => {
+    const bar = $("controls"), top = bar.offsetHeight + (parseFloat(getComputedStyle(bar).top) || 0) + 12;
+    scrollBy(0, document.querySelector(".reward").getBoundingClientRect().top - top);
+    holdView({ key: "reward", top });
+  });
+}
+addEventListener("hashchange", () => { if (DATA) { const view = consumeLink(); render(); goView(view); } });
 
 let DATA = null;
 const $ = id => document.getElementById(id);
@@ -1293,6 +1366,18 @@ function wire(){
   const relaunch = e => { launches++; rollReward(); renderReward(); rumble(e.currentTarget); };
   $("reroll").addEventListener("click", relaunch);
   $("reroll-float").addEventListener("click", relaunch);
+  // Share buttons: the share sheet on phones and tablets; a copied link or a saved picture elsewhere
+  const sheet = canShareSheet();
+  $("share-link").innerHTML = sheet ? SHARE_SVG : LINK_SVG;
+  $("share-link").setAttribute("aria-label", sheet ? "Share this mission" : "Copy a link to this mission");
+  $("share-link").title = sheet ? "Share this mission" : "Copy a link to this mission";
+  $("share-link").addEventListener("click", shareLink);
+  const haul = $("share-haul");
+  haul.innerHTML = sheet ? `${SHARE_SVG}Share` : `${SAVE_SVG}Save picture`;
+  haul.setAttribute("aria-label", sheet ? "Share this haul as a picture" : "Save this haul as a picture");
+  haul.addEventListener("click", shareHaul);
+  // Start drawing as the finger or pointer arrives, so the share sheet opens while the tap still counts
+  for (const ev of ["pointerdown", "pointerenter", "focus"]) haul.addEventListener(ev, () => { if (reward) haulPicture().catch(() => {}); });
   // Tables scrolled sideways show a divider beside the pinned item column, and carry their pinned label row along
   // (scroll doesn't bubble, so capture it)
   $("tiers").addEventListener("scroll", e => {
@@ -1798,8 +1883,9 @@ function rumble(el){
 }
 
 /* Mission reward simulator: draw `capacity` items from the selected level's item × rarity shares */
-let rewardKey = null, reward = null, launches = 0;
+let rewardKey = null, reward = null, launches = 0, rewardSerial = 0;
 function rollReward(){
+  rewardSerial++;
   const L = level(state.star);
   if (!L) { reward = null; return; }
   const keys = [], cum = []; let tot = 0;
@@ -1821,6 +1907,15 @@ const SORTS = {
   tier:   (A, B, ra, rb) => B.t - A.t || rb - ra || CAT_ORDER[A.c] - CAT_ORDER[B.c] || A.f.localeCompare(B.f),
   rarity: (A, B, ra, rb) => rb - ra || B.t - A.t || CAT_ORDER[A.c] - CAT_ORDER[B.c] || A.f.localeCompare(B.f),
 };
+// The reward in sort order, one section per type in the game's order (artifacts, stones, ingredients), then stone fragments
+function rewardSections(){
+  const cmp = SORTS[state.sort];
+  const sorted = reward.slice().sort((a, b) => {
+    const A = DATA.items[a[0]], B = DATA.items[b[0]];
+    return CAT_ORDER[rwCat(A)] - CAT_ORDER[rwCat(B)] || cmp(A, B, a[1], b[1]) || a[0].localeCompare(b[0]) || b[1] - a[1];
+  });
+  return ["art", "stone", "ing", "frag"].map(c => ({ c, items: sorted.filter(([id]) => rwCat(DATA.items[id]) === c) })).filter(x => x.items.length);
+}
 function renderReward(){
   if (!DATA) return;
   const sh = ship(), m = mission();
@@ -1833,6 +1928,7 @@ function renderReward(){
   if (!SORTS[state.sort]) state.sort = "tier";
   document.querySelectorAll("#sort button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sort === state.sort)));
   $("reward-sub").innerHTML = `One simulated return from ${state.star === 8 ? "an" : "a"} ${starTxt(state.star)} ${m.label.toLowerCase()} ${shipTag(sh)}${tgtPhrase()}.`;
+  $("share-haul").hidden = !reward;
   if (!reward) {
     $("reward-n").innerHTML = ""; lc.classList.remove("show");
     $("reward-grid").innerHTML = `<div class="empty" style="color:var(--space-fg)">No drop data for this star level, so there's nothing to simulate.</div>`;
@@ -1840,13 +1936,7 @@ function renderReward(){
     syncRolls();
     return;
   }
-  const cmp = SORTS[state.sort];
-  const sorted = reward.slice().sort((a, b) => {
-    const A = DATA.items[a[0]], B = DATA.items[b[0]];
-    return CAT_ORDER[rwCat(A)] - CAT_ORDER[rwCat(B)] || cmp(A, B, a[1], b[1]) || a[0].localeCompare(b[0]) || b[1] - a[1];
-  });
-  // One section per type, in the game's order (artifacts, stones, ingredients), then stone fragments
-  const sections = ["art", "stone", "ing", "frag"].map(c => ({ c, items: sorted.filter(([id]) => rwCat(DATA.items[id]) === c) })).filter(x => x.items.length);
+  const sections = rewardSections();
   // Header counts: copies by rarity (coloured), then by tier
   const secHead = (pre, sec) => {
     const rc = [0, 0, 0, 0], tc = [0, 0, 0, 0, 0];
@@ -1855,7 +1945,7 @@ function renderReward(){
     const tiers = [4, 3, 2, 1].map(t => tc[t] ? `<span>T${t} <b>${N(`${pre}|${sec.c}|t${t}`, tc[t], "int")}</b></span>` : "").join("");
     return `${CAT_NAME[sec.c]} <span class="sec-n">${N(`${pre}|${sec.c}|n`, sec.items.length, "int")}</span><span class="sec-stats"><span class="sec-rar">${rar}</span><span class="sec-tier">${tiers}</span></span>`;
   };
-  $("reward-n").innerHTML = `<b>${N("r|n", sorted.length, "int")}</b> items`;
+  $("reward-n").innerHTML = `<b>${N("r|n", reward.length, "int")}</b> items`;
   const gridBefore = snapGrid();
   $("reward-grid").innerHTML = sections.map(sec =>
     `<div class="rg-sec"><div class="rg-head" data-c="${sec.c}">${secHead("g", sec)}</div>` +
@@ -1879,6 +1969,156 @@ function renderReward(){
     }).join("") + `</ul></div>`;
   }).join("");
   syncRolls();
+}
+
+/* Sharing. A link to this exact view (see linkCode) goes to the share sheet on phones and tablets, and to the
+   clipboard elsewhere, where a link is what you'd paste. The simulated haul goes as a picture drawn on a canvas: the
+   mission, then the tiles grouped as in the list, then the app's name, always in the dark theme's colours. Where the
+   share sheet can't take it (or there is none) the picture is saved instead. */
+const svg24 = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+// Lucide "share", "link", and "download" (lucide.dev, ISC License)
+const SHARE_SVG = svg24('<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/>');
+const LINK_SVG = svg24('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>');
+const SAVE_SVG = svg24('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>');
+const canShareSheet = () => !!navigator.share && matchMedia("(pointer: coarse)").matches;
+let shareFlashTimer = 0;
+function shareFlash(text){
+  const f = $("share-flash"); f.textContent = text; f.classList.add("show");
+  clearTimeout(shareFlashTimer); shareFlashTimer = setTimeout(() => f.classList.remove("show"), 2500);
+}
+async function shareLink(){
+  const g = curTgt && DATA.targets[curTgt], url = linkURL();
+  if (canShareSheet()) {
+    const text = `Drop odds for the ${mission().label.toLowerCase()} ${ship().name} at ${state.star}★${g ? `, targeting ${g.n}` : ""}`;
+    try { await navigator.share({ title: "Ship Odditer", text, url }); return; }
+    catch (e) { if (e.name === "AbortError") return; }  // anything else: copy the link instead
+  }
+  try { await navigator.clipboard.writeText(url); shareFlash("Link copied"); } catch (e) { shareFlash("Couldn't copy the link"); }
+}
+// The dark theme's colours (the picture looks the same from either theme)
+const HAUL = { bg: "#0a1020", fg: "#e8eef8", muted: "#93a0b1", rar: ["#a9b4c2", "#6aaef5", "#b98af0", "#f0b54a"] };
+const hexMix = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * t + parseInt(b.slice(i, i + 2), 16) * (1 - t)).toString(16).padStart(2, "0")).join("");
+const hexA = (c, a) => `rgba(${[1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)).join(",")},${a})`;
+// The picture for the current haul and sort, drawn once (a promise of a PNG blob)
+let haulCache = null;
+function haulPicture(){
+  const key = `${rewardSerial}|${state.sort}`;
+  if (!haulCache || haulCache.key !== key)
+    haulCache = { key, blob: drawHaul().catch(e => { if (haulCache && haulCache.key === key) haulCache = null; throw e; }) };
+  return haulCache.blob;
+}
+// A tile's shine, held still: rays fading out from the centre and a soft core, as .rw .glow draws them
+const GLOW_INT = [0, .5, .78, 1], GLOW_REACH = [0, .36, .42, .5];
+function glowSprite(r, T){
+  const cv = document.createElement("canvas"); cv.width = cv.height = T;
+  const g = cv.getContext("2d"), h = T / 2, col = HAUL.rar[r];
+  if (g.createConicGradient) {
+    const rays = g.createConicGradient(r, h, h);
+    for (let k = 0; k < 9; k++) { const a = k / 9; rays.addColorStop(a, hexA(col, 0)); rays.addColorStop(a + .025, hexA(col, .85)); rays.addColorStop(a + .06, hexA(col, .85)); rays.addColorStop(a + .085, hexA(col, 0)); }
+    g.fillStyle = rays; g.fillRect(0, 0, T, T);
+    g.globalCompositeOperation = "destination-in";  // the rays fade out with distance
+    const fade = g.createRadialGradient(h, h, 0, h, h, GLOW_REACH[r] * 1.485 * T);  // the CSS mask's reach, on a box 2.1× the tile
+    fade.addColorStop(0, "#000"); fade.addColorStop(.13 / GLOW_REACH[r], "rgba(0,0,0,.85)"); fade.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = fade; g.fillRect(0, 0, T, T);
+    g.globalCompositeOperation = "source-over";
+  }
+  const core = g.createRadialGradient(h, h, 0, h, h, h * Math.SQRT2);
+  core.addColorStop(0, hexA(col, .75)); core.addColorStop(.38, hexA(col, .25)); core.addColorStop(.62, hexA(col, 0));
+  g.globalAlpha = .8; g.fillStyle = core; g.fillRect(0, 0, T, T);
+  return cv;
+}
+async function drawHaul(){
+  const sh = ship(), m = mission(), g = curTgt && DATA.targets[curTgt], secs = rewardSections();
+  const W = 1080, PAD = 40, GAP = 8, COLS = 14, T = (W - 2 * PAD - (COLS - 1) * GAP) / COLS;  // 64 px tiles
+  const DISPLAY = '"Chakra Petch", "Odditer Symbols", system-ui, sans-serif', BODY = '"Atkinson Hyperlegible", "Odditer Symbols", system-ui, sans-serif';
+  const F = { kick: `600 15px ${DISPLAY}`, title: `700 46px ${DISPLAY}`, sub: `400 22px ${BODY}`, subB: `700 22px ${BODY}`, brand: `700 22px ${DISPLAY}`, small: `400 17px ${BODY}` };
+  // Fonts and pictures first: a canvas only draws what has loaded
+  const pics = {};
+  await Promise.all([
+    ...Object.values(F).map(f => document.fonts.load(f, "A★").catch(() => {})),
+    ...[...new Set([sh.icon, ...reward.map(([id]) => DATA.items[id].i)])].map(f => new Promise(res => { const im = new Image(); im.onload = im.onerror = res; im.src = icon(f); pics[f] = im; })),
+  ]);
+  const rows = n => Math.ceil(n / COLS), secH = s => 40 + rows(s.items.length) * (T + GAP) - GAP + 18;
+  const H = PAD + 112 + 28 + secs.reduce((a, s) => a + secH(s), 0) + 98;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const c = cv.getContext("2d");
+  const spaced = px => { if ("letterSpacing" in c) c.letterSpacing = px; };
+  const contain = (im, x, y, s) => {
+    if (!im || !im.naturalWidth) return;
+    const k = s / Math.max(im.naturalWidth, im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k;
+    c.drawImage(im, x + (s - w) / 2, y + (s - h) / 2, w, h);
+  };
+  // Deep space, lit from the top left in the mission length's colour, like the mission card
+  const tint = HAUL.rar[state.len + 1], bg = c.createRadialGradient(0, 0, 0, 0, 0, 1100);
+  bg.addColorStop(0, hexMix(tint, HAUL.bg, .38)); bg.addColorStop(.45, hexMix(tint, HAUL.bg, .1)); bg.addColorStop(.75, HAUL.bg);
+  c.fillStyle = bg; c.fillRect(0, 0, W, H);
+  // The mission: the ship, what kind of launch, and what came back by rarity (rarity words in colour only)
+  c.save(); c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = 18; c.shadowOffsetY = 6; contain(pics[sh.icon], PAD, PAD, 112); c.restore();
+  const x0 = PAD + 136;
+  c.font = F.kick; c.fillStyle = hexA(HAUL.fg, .75); spaced("1.2px");
+  c.fillText(`${m.label} mission · ${g ? `targeting ${g.n}` : "untargeted"}${state.dcap > 1 ? ` · ${DCAP_NAME[state.dcap]}` : ""}`.toUpperCase(), x0, PAD + 28);
+  spaced("0px");
+  c.font = F.title; c.fillStyle = HAUL.fg; c.fillText(sh.name, x0, PAD + 74);
+  const rc = [0, 0, 0, 0]; for (const [, r] of reward) rc[r]++;
+  let x = x0;
+  const run = (text, font, color) => { c.font = font; c.fillStyle = color; c.fillText(text, x, PAD + 106); x += c.measureText(text).width; };
+  run(String(state.star), F.subB, HAUL.fg); run("★", F.subB, HAUL.rar[3]); run(" · ", F.sub, HAUL.muted);
+  run(String(reward.length), F.subB, HAUL.fg); run(" items", F.sub, HAUL.muted);
+  rc.forEach((n, r) => { if (n) { run(" · ", F.sub, HAUL.muted); run(String(n), F.subB, HAUL.rar[r]); run(" " + RARITIES[r].toLowerCase(), F.sub, HAUL.rar[r]); } });
+  // The haul, grouped as in the list, each group headed by its name and count, and its tiers on the right
+  const glows = [null, 1, 2, 3].map(r => r && glowSprite(r, T));
+  let y = PAD + 140;
+  secs.forEach((s, i) => {
+    if (i) { c.fillStyle = hexA(HAUL.fg, .14); c.fillRect(PAD, y, W - 2 * PAD, 1); }
+    const tc = [0, 0, 0, 0, 0]; for (const [id] of s.items) tc[DATA.items[id].t]++;
+    c.font = F.kick; spaced("1.2px");
+    c.fillStyle = hexA(HAUL.fg, .72); c.fillText(`${CAT_NAME[s.c]}  ${s.items.length}`.toUpperCase(), PAD, y + 27);
+    c.textAlign = "right"; c.fillStyle = hexA(HAUL.fg, .55);
+    c.fillText([4, 3, 2, 1].filter(t => tc[t]).map(t => `T${t} ${tc[t]}`).join("   "), W - PAD, y + 27);
+    c.textAlign = "left"; spaced("0px");
+    s.items.forEach(([id, r], k) => {
+      const tx = PAD + (k % COLS) * (T + GAP), ty = y + 40 + Math.floor(k / COLS) * (T + GAP);
+      c.save(); c.beginPath();
+      if (c.roundRect) c.roundRect(tx, ty, T, T, 8); else c.rect(tx, ty, T, T);
+      c.clip();
+      c.fillStyle = hexA(HAUL.fg, .07); c.fillRect(tx, ty, T, T);
+      if (r) {
+        c.globalAlpha = GLOW_INT[r]; c.drawImage(glows[r], tx, ty); c.globalAlpha = 1;
+        c.strokeStyle = hexA(HAUL.rar[r], [0, .3, .5, .75][r]); c.lineWidth = 2; c.stroke();  // half of it, inside the clip
+      }
+      contain(pics[DATA.items[id].i], tx + T * .11, ty + T * .11, T * .78);
+      c.restore();
+    });
+    y += secH(s);
+  });
+  // Signed: the app's eggs and name, and where to find it
+  c.fillStyle = hexA(HAUL.fg, .14); c.fillRect(PAD, y, W - 2 * PAD, 1);
+  c.save(); c.translate(PAD, y + 22); c.scale(.44, .44);
+  document.querySelectorAll(".logo path").forEach((p, i) => { c.fillStyle = HAUL.rar[i + 1]; c.fill(new Path2D(p.getAttribute("d"))); });
+  c.restore();
+  c.font = F.brand; c.fillStyle = HAUL.fg; c.fillText("Ship Odditer", PAD + 54, y + 52);
+  c.font = F.small; c.fillStyle = HAUL.muted; c.textAlign = "right";
+  c.fillText(`Simulated from player-logged drops · ${location.host}${location.pathname.replace(/\/(index\.html)?$/, "")}`, W - PAD, y + 52);
+  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("couldn't draw the picture")), "image/png"));
+}
+async function shareHaul(){
+  const btn = $("share-haul");
+  if (!reward || btn.getAttribute("aria-busy")) return;
+  btn.setAttribute("aria-busy", "true");
+  try {
+    const blob = await haulPicture(), legend = reward.filter(([, r]) => r === 3).length;
+    const file = new File([blob], `ship-odditer-${state.ship}-haul.png`, { type: "image/png" });
+    if (canShareSheet() && navigator.canShare && navigator.canShare({ files: [file] })) {
+      const text = `One simulated ${mission().label.toLowerCase()} ${ship().name} launch at ${state.star}★: ${reward.length} items${legend ? `, ${legend} legendary` : ""}`;
+      try { await navigator.share({ files: [file], title: "Ship Odditer", text }); return; }
+      catch (e) { if (e.name === "AbortError") return; }  // anything else (say, the tap no longer counts): save it instead
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  } catch (e) { console.error(e); }
+  finally { btn.removeAttribute("aria-busy"); }
 }
 
 /* Theme: Auto follows the system setting; Light/Dark override it */
@@ -2026,9 +2266,12 @@ function restorePlace(){
     const fade = () => setTimeout(() => { note.classList.add("gone"); setTimeout(() => { note.hidden = true; note.classList.remove("gone"); }, 400); }, 4000);
     if (document.hidden) document.addEventListener("visibilitychange", fade, { once: true }); else fade();  // shown when you come back
   };
+  afterTables(back);
+}
+function afterTables(fn){
   const t0 = performance.now();
   (function wait(){  // a saved target loads its file before the tables appear
-    if (document.querySelector("#tiers > section.tier") || performance.now() - t0 > 5000) back(); else requestAnimationFrame(wait);
+    if (document.querySelector("#tiers > section.tier") || performance.now() - t0 > 5000) fn(); else requestAnimationFrame(wait);
   })();
 }
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
@@ -2060,7 +2303,8 @@ fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.js
   // The footer's date comes from the data itself, so it can't fall out of step
   const when = new Date(d.dataUpdated + "T00:00:00");
   if (!isNaN(when)) $("data-date").textContent = when.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  wire(); render(); restorePlace();
+  const view = consumeLink();
+  wire(); render(); restorePlace(); goView(view);
   (window.requestIdleCallback || (f => setTimeout(f, 300)))(preloadIcons);
 }).catch(err => {
   console.error(err);

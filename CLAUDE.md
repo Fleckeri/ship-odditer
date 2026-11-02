@@ -232,6 +232,26 @@ needs `min-width: 0`: as a grid item it would otherwise grow to its table's full
 `snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch. Everything respects
 `prefers-reduced-motion`.
 
+**Links.** A share link carries every setting as a 12-character code, e.g. `#a280a0a1o1e0` (`linkCode`): fixed-width
+base-36 fields, in order: ship (its place in `DATA.ships`, the game's own order; `build_data.py`'s `SHIPS` is
+append-only for this) 1, length 1, stars 1, target (afx id, `--` for none) 2, items × 5 + rarity (0 all, 1-4) 1, Zero-G 1,
+FTL 2, odds 2, (event − 1) × 2 + (sort is rarity) 1. `readLink()` reads them in turn; each valid field applies, and
+invalid or missing ones keep the current value, so a shorter code sets only its leading fields: the shortcuts are
+`#92` (ship 9, extended), keeping stars, target, and research. `consumeLink()` applies the link on load (before
+`wire()`) and on `hashchange` (a shortcut opened while the app runs), saves at once, and clears it from the address
+with `history.replaceState`, so the address bar stays clean; reloads and bookmarks open the saved settings. The share
+button builds the link on demand (`linkURL()`). The field order is the format: shared links and installed shortcuts
+carry it, so add new fields at the end and never reorder. `#sim` (`goView`) scrolls to the simulator once the tables
+exist and holds it there with `holdView` while the tier sections above take their real heights (content-visibility).
+
+**Sharing.** The round button on the mission card's top right shares the mission's link: the share sheet where
+`canShareSheet()` (Web Share and a coarse pointer), otherwise it copies the link and flashes "Link copied" (desktops
+get a link icon). The simulator's button shares the haul as a 1080 px PNG (`drawHaul`: the mission, the tiles in list
+order with static glows from `glowSprite`, the app's eggs from the page's `.logo` paths, and the site address), always
+in the dark theme's colours; where the share sheet can't take files, or there is none, it's saved ("Save picture").
+`haulPicture()` caches the picture per roll (`rewardSerial`) and sort, and drawing starts on `pointerdown`/hover/focus
+so the share sheet opens while the tap still counts as user activation (Safari is strict).
+
 **Keep your place.** `pickAnchor` / `holdView` keep the block at the top of the view (a tier section, Nerd Stuff,
 or the simulator) fixed for ~1 s after a full render. Skipped while the top of the page is in view; cancelled by
 wheel, touch, or paging keys. `html.holding` turns off browser scroll anchoring during the hold.
@@ -330,6 +350,10 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   while you scroll through it and leaves with it; the dark box is `overflow: clip` plus `min-width: 0` for the same
   reasons as `.tier`. The list is one `<ul>` per group. Sort Tier or Rarity; "N items · N “missions” launched"
   (count hidden until the second launch); the Relaunch button shows the ship's icon and floats when scrolled past.
+- **Share links** (owner, Nov 2026): carry every setting (research, odds, and event included), as short as possible
+  (the 12-character code), and never stay in the address bar: a link is applied, saved, and cleared.
+- **Share buttons.** A round button on the mission card's top right (link icon on desktops, share icon on phones);
+  "Share" / "Save picture" beside Relaunch for the haul picture.
 - **Nerd Stuff** (was "How to read this") at the bottom, then a three-line footer: credit and GitHub link;
   sources; data date and "Not affiliated with Auxbrain".
 - **Text style.** Oxford comma in user-facing lists. Words inside running text match it in case, size, and
@@ -393,7 +417,10 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   saved settings are repaired; install panel per browser (shown, dismissed, reopened, hidden where impossible,
   "Installed" when standalone); PWA installable, service worker in control, offline load incl. targeted data;
   updates (a new deploy downloads only the changed files, reloads by itself at a quiet moment keeping your place
-  and saying so, and works offline; a target picked after a takeover reloads into the new version).
+  and saying so, and works offline; a target picked after a takeover reloads into the new version); links (open their
+  view with research and all and leave the address clean, a shorter code keeps the rest, `#sim`, unknown values
+  ignored, a copied link opens the same view in a fresh browser); sharing (desktop copies the link and saves a 1080 px
+  haul PNG; phones use the share sheet, stubbed).
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.

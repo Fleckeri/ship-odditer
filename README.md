@@ -28,6 +28,8 @@ rewards.
   updates live.
 - **Mission Reward Simulator**: a simulated return grouped like the game, with rarity and tier counts. Relaunch
   as often as you like.
+- **Share** what you're looking at as a short link (it opens exactly the same view, research included), or your
+  simulated haul as a picture.
 - **Tooltips** for every item (effects, slots, and odds per rarity), every column, and the mission stats.
 - **Honest about data quality**: values resting on few sightings are marked, and missions or targets with small
   samples are flagged.

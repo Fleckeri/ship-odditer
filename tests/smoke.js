@@ -184,6 +184,72 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(JSON.stringify(got) === JSON.stringify(want), `${name}: install link and panel state ${JSON.stringify(got)}`);
     await ctx.close();
   }
+  // Links (short codes, see linkCode): a link opens its view and is cleared from the address once saved, a shorter code
+  // (a shortcut's) opened in the running page sets only its fields, #sim goes to the simulator, unknown values change
+  // nothing, and the share button's link opens the same view in a fresh browser
+  {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); const p = await ctx.newPage(); const errs = [];
+    p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && !ignore(m.text()) && errs.push(m.text()));
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: srv.url });
+    const view = () => p.evaluate(() => [state.ship, state.len, state.star, state.target, state.cat, state.rar, state.zerog, state.ftl, state.odds, state.dcap, state.sort]);
+    // Henerprise, standard, 4★, Book of Basan (afx 10), stones with epic, Zero-G 3, FTL 12, odds 90, triple, by rarity
+    await p.goto(srv.url + '#9140a830c2i5');
+    await p.waitForFunction(() => curTgt === '10' && document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 });
+    const opened = await view();
+    check(JSON.stringify(opened) === '["henerprise",1,4,"10","stone",2,3,12,90,3,"rarity"]', `a link opens its view, research and all ${JSON.stringify(opened)}`);
+    const clean = await p.evaluate(() => [location.href, JSON.parse(localStorage.getItem('mission-odds')).zerog]);
+    check(clean[0] === srv.url && clean[1] === 3, `the link is saved and cleared from the address ${JSON.stringify(clean)}`);
+    await p.evaluate(() => { document.getElementById('star-2').click(); const o = document.getElementById('odds'); o.value = 75; o.dispatchEvent(new Event('input')); });
+    await p.waitForTimeout(500);
+    check(await p.evaluate(() => location.href) === srv.url, 'the address stays clean as settings change');
+    await p.evaluate(() => { location.hash = '#80'; });  // Voyegger, short
+    await p.waitForFunction(() => state.ship === 'voyegger', null, { timeout: 5000 }).catch(() => {});
+    const sc = await view();
+    check(JSON.stringify(sc) === '["voyegger",0,2,"10","stone",2,3,12,75,3,"rarity"]' && await p.evaluate(() => location.hash) === '', `a shortcut's code applies in the open page, keeping everything else ${JSON.stringify(sc)}`);
+    await p.evaluate(() => { scrollTo(0, 0); location.hash = '#sim'; }); await p.waitForTimeout(1500);  // held in place for ~1 s
+    const sim = await p.evaluate(() => [document.querySelector('.reward').getBoundingClientRect().top - document.getElementById('controls').getBoundingClientRect().bottom, location.hash]);
+    check(sim[0] >= 0 && sim[0] < 30 && sim[1] === '', `#sim goes to the simulator ${JSON.stringify(sim)}`);
+    await p.evaluate(() => { location.hash = '#~~~~~~~~~~~~'; }); await p.waitForTimeout(1300);  // past "keep your place"
+    const bad = await view();
+    check(JSON.stringify(bad) === JSON.stringify(sc), `unknown link values change nothing ${JSON.stringify(bad)}`);
+    // Desktop: the mission card's button copies the link, which opens the same view in a fresh browser
+    await p.evaluate(() => scrollTo(0, 0)); await p.click('#share-link');
+    const copied = await p.evaluate(async () => [await navigator.clipboard.readText(), document.getElementById('share-flash').textContent]);
+    const fresh = await b.newContext({ viewport: { width: 1280, height: 900 } }), fp = await fresh.newPage();
+    await fp.goto(copied[0]); await fp.waitForFunction(() => curTgt === '10' && document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 }).catch(() => {});
+    const there = await fp.evaluate(() => [state.ship, state.len, state.star, state.target, state.cat, state.rar, state.zerog, state.ftl, state.odds, state.dcap, state.sort]);
+    await fresh.close();
+    check(/#[0-9a-z]{4}[0-9a-z]{8}$/.test(copied[0]) && copied[1] === 'Link copied' && JSON.stringify(there) === JSON.stringify(sc),
+      `the share button copies a short link that opens the same view ${JSON.stringify([copied, there])}`);
+    await p.evaluate(() => { Object.assign(state, { zerog: 10, ftl: 60, odds: 50, dcap: 1, sort: 'tier', cat: 'art', rar: 'all', target: 'none' }); render(); });
+    await p.waitForTimeout(1300);  // past "keep your place"
+    // The haul is saved as a picture
+    const dl = p.waitForEvent('download', { timeout: 10000 });
+    await p.click('#share-haul');
+    const file = await (await dl).path(), png = require('fs').readFileSync(file);
+    const [pw, ph] = [png.readUInt32BE(16), png.readUInt32BE(20)];
+    check(png.toString('latin1', 1, 4) === 'PNG' && pw === 1080 && ph > 400, `the haul is saved as a picture (${pw} × ${ph})`);
+    check(errs.length === 0, `links and sharing: no script errors ${errs.join(' | ')}`);
+    await ctx.close();
+  }
+  // Phones: both buttons use the share sheet (stubbed: headless Chromium has none)
+  {
+    const ctx = await b.newContext(devices['iPhone 13']); const p = await ctx.newPage();
+    await ctx.addInitScript(() => {
+      window.__shared = [];
+      navigator.share = async d => { __shared.push(d); }; navigator.canShare = d => !!(d && d.files);
+    });
+    await p.goto(srv.url + '#a28');  // Atreggies Henliner, extended, 8★
+    await p.waitForFunction(() => document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 });
+    await p.click('#share-link');
+    const s1 = await p.evaluate(() => __shared[0] && [__shared[0].url === linkURL(), /extended Atreggies Henliner at 8★/.test(__shared[0].text)]);
+    check(JSON.stringify(s1) === '[true,true]', `phones share the mission's link with the share sheet ${JSON.stringify(s1)}`);
+    await p.evaluate(() => document.getElementById('share-haul').scrollIntoView({ block: 'center' }));
+    await p.click('#share-haul'); await p.waitForFunction(() => __shared.length === 2, null, { timeout: 10000 }).catch(() => {});
+    const s2 = await p.evaluate(async () => { const f = __shared[1] && __shared[1].files && __shared[1].files[0]; return f ? [f.type, (await createImageBitmap(f)).width] : null; });
+    check(JSON.stringify(s2) === '["image/png",1080]', `phones share the haul picture with the share sheet ${JSON.stringify(s2)}`);
+    await ctx.close();
+  }
   // PWA: installable and works offline
   const ctx = await b.newContext(); const p = await ctx.newPage();
   await p.goto(srv.url); await p.waitForTimeout(2500);

@@ -22,6 +22,8 @@ loot = json.load(open(os.path.join(EGG, "artifact-explorer/data/loot.json")))
 config = json.load(open(os.path.join(EGG, "_common/eiafx/eiafx-config.json")))
 afx = json.load(open(os.path.join(EGG, "_common/eiafx/eiafx-data.json")))
 
+# In the game's own order. A ship's place in this list is its code in the app's share links and home-screen shortcuts
+# (linkCode in app/ship-odditer.html), so add new ships at the end and never reorder or remove any.
 SHIPS = [  # config id, display name, icon file, loot mission prefix
     ("CHICKEN_ONE", "Chicken One", "afx_ship_chicken_1.webp", "chicken-one"),
     ("CHICKEN_NINE", "Chicken Nine", "afx_ship_chicken_9.webp", "chicken-nine"),
