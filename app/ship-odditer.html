@@ -140,6 +140,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 #rar button[data-r="1"][aria-pressed="true"]{background:var(--rare);color:var(--surface)}
 #rar button[data-r="2"][aria-pressed="true"]{background:var(--epic);color:var(--surface)}
 #rar button[data-r="3"][aria-pressed="true"]{background:var(--legend);color:var(--surface)}
+.tgt-pair{display:contents}
+/* Capacity event toggle (off → 2× → 3×): the game's event icon in a square button that fills rare blue for
+   double capacity and epic purple for the rarer triple */
+.dcap-btn{flex:none;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;transition:background .15s,border-color .15s}
+.dcap-btn:hover{border-color:var(--accent)}
+.dcap-btn img{width:26px;height:26px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.dcap-btn[data-x="2"]{background:var(--rare);border-color:var(--rare)}
+.dcap-btn[data-x="3"]{background:var(--epic);border-color:var(--epic)}
 .tb-slider{display:flex;align-items:center;gap:6px}
 .tb-slider label{font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:help}
 /* Custom range sliders. --f is the 0-1 position (set from script) so the track fills up to the thumb.
@@ -171,6 +179,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tb-pill .len-dot{margin:0}
 .tb-pill svg{width:12px;height:12px;flex:none;color:var(--epic)}  /* the research pills: epic purple like their sliders */
 .tb-pill.tgt{box-shadow:inset 0 0 0 1.5px var(--tgt)}
+.tb-pill.x2{background:var(--rare);color:var(--surface)} .tb-pill.x3{background:var(--epic);color:var(--surface)}  /* filled like the toggle */
 .tb-pill.off{opacity:.5}
 .tb-pill .pl-l{display:inline-block;overflow:hidden;text-overflow:ellipsis;max-width:11em}
 .tb-pill .pl-s{display:none}
@@ -208,7 +217,9 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
   #ship-group{grid-column:span 4} #len-group{grid-column:span 2}
   .tb-mission > .tb-compact{grid-column:span 2}
   .tb-mission:has(#rar-dd-group[hidden]) > .tb-compact{grid-column:span 3}
-  .tb-mission > .group{display:grid;gap:2px;min-width:0}
+  .tb-mission > .group,.tgt-pair > .group{display:grid;gap:2px;min-width:0}
+  .tgt-pair{display:flex;align-items:flex-end;gap:8px;min-width:0}
+  .tgt-pair > .group{flex:1}
   #tb-mission .dd,#tb-mission .dd .dd-btn{width:100%;min-width:0;max-width:none}  /* beats the per-dropdown widths below */
   .tb-slider{min-width:0}
   .tb-slider label{flex:none;width:4rem}  /* one width, so the tracks line up */
@@ -224,7 +235,7 @@ button,.dd-list li,.rw,th[data-tip],label[data-tip],tbody tr,.reward-list li{-we
 @media (max-height:520px) and (min-width:600px){
   #ship-group,#len-group,.tb-mission > *{grid-column:span 2}
 }
-.theme-btn:focus-visible,.linkbtn:focus-visible,.tb-toggle:focus-visible,input[type=range]:focus-visible,.dd-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.theme-btn:focus-visible,.linkbtn:focus-visible,.tb-toggle:focus-visible,.dcap-btn:focus-visible,input[type=range]:focus-visible,.dd-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Custom dropdown (so ship options can show their icons) */
 .dd{position:relative}
@@ -544,11 +555,15 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
           <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="len-label" hidden></ul>
         </div>
       </div>
+      <!-- Target and the capacity event toggle: separate items in the wide toolbar, one row in the compact one -->
+      <div class="tgt-pair">
       <div class="group" id="tgt-group"><span class="label" id="tgt-label">Target</span>
         <div class="dd" id="tgt-dd" data-label="Mission target">
           <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="tgt-label"><span class="dd-val"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <ul class="dd-list" role="listbox" tabindex="0" aria-labelledby="tgt-label" hidden></ul>
         </div>
+      </div>
+      <button type="button" class="dcap-btn" id="dcap" aria-pressed="false" aria-label="Capacity event: off" data-x="1"><img src="icons/icon_afx_chest_2.webp" alt="" width="26" height="26"></button>
       </div>
       <!-- The table options as dropdowns, for the compact toolbar (the button rows below are hidden there) -->
       <div class="group tb-compact"><span class="label" id="stars-dd-label">Stars</span>
@@ -641,7 +656,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
       <li>Tier summaries: "Odds of all … in single launch" is the chance one launch has every listed item. "… getting everything" is the launches needed to have seen them all at your odds; the rarest item dominates it. "… getting target" does the same for the target's item, or says when it doesn't drop there.</li>
       <li>The strip shows P(≥1) at each star level; the outlined cell is the selected level.</li>
       <li><svg class="tgt-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg><b class="icon-text">Target</b> uses only drops logged with that target set. The game doesn't publish how targeting works, and the boost varies widely, so nothing is estimated. Only the Quintillion Chicken and later can target. The count beside each target in the list is how many items were logged with it for this ship, length, and star level; "no data at N★" means none yet. Stone fragments are hidden: targeting them is almost never worthwhile (a poor return, and lower odds of tier 2–4 stones), so consume artifacts for fragments instead.</li>
-      <li>Capacity = (base + per-star bump × stars) × (1 + 5% × Zero-G level), rounded down. FTL cuts mission time 1% per level, from the Quintillion Chicken up; it changes days, not drops. Quality runs from the mission's minimum to its maximum plus the per-star bump.</li>
+      <li>Capacity = (base + per-star bump × stars) × (1 + 5% × Zero-G level), × 2 or × 3 during a capacity event, rounded down. FTL cuts mission time 1% per level, from the Quintillion Chicken up; it changes days, not drops. Quality runs from the mission's minimum to its maximum plus the per-star bump.</li>
       <li>Star progress counts launch points (1 per short, 1.4 per standard, 1.8 per extended launch) against the game's star thresholds. "From scratch" starts at 0★; "From N★" starts when the ship reaches N★.</li>
       <li>Days assume three slots launching together and relaunching as they land. Fueling usually makes you slower.</li>
       <li><span class="rough">Faded, underlined values</span> (≈ in tooltips) rest on fewer than 5 sightings and are rough. Thin data for a whole mission is flagged above the tables.</li>
@@ -660,7 +675,7 @@ th[data-tip]:focus-visible,label[data-tip]:focus-visible{outline:2px solid var(-
 const RARITIES = ["Common","Rare","Epic","Legendary"];
 const RAR_CLASS = ["r0","r1","r2","r3"];
 const SLOTS = 3;
-const state = { ship: "atreggies", len: 2, target: "none", star: 8, rar: "all", cat: "art", zerog: 10, ftl: 60, odds: 50, sort: "tier" };
+const state = { ship: "atreggies", len: 2, target: "none", star: 8, rar: "all", cat: "art", zerog: 10, dcap: 1, ftl: 60, odds: 50, sort: "tier" };
 try {
   const saved = JSON.parse(localStorage.getItem("mission-odds") || "{}");
   for (const k of Object.keys(state)) if (saved[k] !== undefined) state[k] = saved[k];
@@ -675,6 +690,7 @@ state.target = String(state.target);
 if (!["all", 0, 1, 2, 3].includes(state.rar)) state.rar = "all";
 if (!["art", "stone", "ing"].includes(state.cat)) state.cat = "art";
 state.zerog = clampInt(state.zerog, 0, 10, 10);
+state.dcap = state.dcap === true ? 2 : [1, 2, 3].includes(state.dcap) ? state.dcap : 1;  // early saves held true for 2×
 state.ftl = clampInt(state.ftl, 0, 60, 60);
 state.odds = clampInt(state.odds, 1, 99, 50);
 if (state.sort !== "rarity") state.sort = "tier";  // older saves may hold "type"
@@ -689,7 +705,10 @@ const icon = f => `icons/${f}`;
 
 const ship = () => DATA.ships.find(s => s.id === state.ship) || DATA.ships[DATA.ships.length - 1];
 const mission = () => ship().missions[state.len];
-const capAt = s => { const m = mission(); return Math.floor((m.cap + m.capBump * s) * (1 + 0.05 * state.zerog)); };
+// Research and a capacity event (state.dcap: 1, 2 or 3) multiply together, rounded down once at the end (upstream tools don't
+// model events, so the game's rounding order is unconfirmed; it can differ by one item)
+const capMult = () => (1 + 0.05 * state.zerog) * state.dcap;
+const capAt = s => { const m = mission(); return Math.floor((m.cap + m.capBump * s) * capMult()); };
 const seconds = () => mission().seconds * (ship().ftl ? 1 - 0.01 * state.ftl : 1);
 const perDay = () => SLOTS * 86400 / seconds();
 // Mission target in effect (an afx id string, or null for untargeted). Only FTL ships can target, and a
@@ -1070,9 +1089,11 @@ function wireTooltip(){
   // Targets: item rows/tiles ([data-id]) and short explainers ([data-tip]: column headers, research labels,
   // mission card labels, the target badge)
   const SEL = "[data-tip],[data-tipk],[data-id]";
+  let shownTip = null;
   const show = (el, x, y) => {
-    if (current !== el) {
-      current = el;
+    // A text tip can change under the pointer (the capacity event toggle's does when clicked)
+    if (current !== el || (el.dataset.tip != null && el.dataset.tip !== shownTip)) {
+      current = el; shownTip = el.dataset.tip;
       tip.classList.toggle("tip-text", !el.dataset.id);
       tip.innerHTML = el.dataset.id ? tipHtml(el.dataset.id, el.dataset.r != null ? +el.dataset.r : null)
         : el.dataset.tipk ? colTip(el.dataset.tipk, el.dataset.tipr || "") : el.dataset.tip;
@@ -1174,6 +1195,13 @@ const tbPill = (text, { ico = "", short, cls = "", style = "" } = {}) =>
   (short === undefined ? `<span>${text}</span>` : `<span class="pl-l">${text}</span>${short ? `<span class="pl-s">${short}</span>` : ""}`) + `</span>`;
 // Lucide "box" (capacity, for Zero-G) and "zap" (FTL)
 const ZEROG_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
+const DCAP_ICON = "icon_afx_chest_2.webp";  // the game's mission capacity event icon
+const DCAP_NAME = { 2: "double capacity", 3: "triple capacity" };
+const DCAP_TIP = {
+  1: "<b>Capacity event: off</b><br>Turn on for the game's capacity events: once for double capacity (2×), twice for triple (3×).",
+  2: "<b>Double capacity event</b><br>Launches bring back twice as many items. Again for triple capacity (3×).",
+  3: "<b>Triple capacity event</b><br>Launches bring back three times as many items. Again to turn it off.",
+};
 const FTL_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
 const TGT_SVG = `<svg class="tgt-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>`;
 const TGT_KIND_ORDER = { art: 0, stone: 1, frag: 2, ing: 3 };  // fragments aren't offered (see build_data.py)
@@ -1228,6 +1256,9 @@ function wire(){
   // Sliders only change numbers, never which rows exist, so they take the light path: at most one update
   // per frame, numbers patched in place, no rebuilt tables
   $("zerog").addEventListener("input", () => { state.zerog = +$("zerog").value; schedule("values"); });
+  // Off → 2× → 3× → off. Capacity only, like Zero-G. The button updates at once so its tooltip, shown by the same
+  // click, already describes the new state.
+  $("dcap").addEventListener("click", () => { state.dcap = state.dcap % 3 + 1; paintDcap(); schedule("values"); });
   $("ftl").addEventListener("input", () => { state.ftl = +$("ftl").value; schedule("values"); });
   $("odds").addEventListener("input", () => { state.odds = +$("odds").value; schedule("values"); });
   // While a finger or mouse is on a slider, pause the decorative shine so every frame goes to the numbers
@@ -1249,11 +1280,18 @@ function wire(){
 
 // Mission card labels with a short explainer (hover, focus, or tap)
 const HERO_TIPS = {
-  cap: "<b>Capacity</b><br>Items one launch brings back: the mission's base plus a bump per star, then +5% per Zero-G level.",
+  cap: "<b>Capacity</b><br>Items one launch brings back: the mission's base plus a bump per star, then +5% per Zero-G level, doubled or tripled during a capacity event.",
   time: "<b>Time</b><br>How long one launch takes, after FTL Drive Upgrades (Quintillion Chicken and up).",
   q: "<b>Quality</b><br>The range of item quality this mission can return. Higher quality reaches higher-tier items; the top end rises with stars.",
 };
 const heroTip = (text, tip) => `<span class="hero-tip" tabindex="0" data-tip="${tip.replace(/"/g, "&quot;")}">${text}</span>`;
+// The capacity event toggle's colour, label, and tooltip for the current state
+function paintDcap(){
+  const b = $("dcap"), x = state.dcap;
+  b.dataset.x = x; b.dataset.tip = DCAP_TIP[x];
+  b.setAttribute("aria-pressed", String(x > 1));
+  b.setAttribute("aria-label", x > 1 ? `Capacity event: ${DCAP_NAME[x]}` : "Capacity event: off");
+}
 /* Toolbar readouts, the mission card and the star-progress lines (small; rebuilt on every change) */
 let lastPills = [];
 function renderTop(sh, m, s){
@@ -1265,6 +1303,7 @@ function renderTop(sh, m, s){
     (sh.ftl ? "Available from the Quintillion Chicken up. Stone fragments are hidden: targeting them is almost never worthwhile." : `${sh.name} can't target; only the Quintillion Chicken and later can.`);
   if (sh.ftl) $("tgt-group").removeAttribute("data-tip");
   else $("tgt-group").dataset.tip = `${sh.name} can't target; only the Quintillion Chicken and later can.`;
+  paintDcap();
   $("zerog").value = state.zerog; $("ftl").value = state.ftl; $("odds").value = state.odds;
   $("zerog-out").textContent = `${state.zerog}/10`;
   $("ftl-out").textContent = `${state.ftl}/60`;
@@ -1280,7 +1319,7 @@ function renderTop(sh, m, s){
   // Folded toolbar: every setting as a pill, and the same in words for screen readers (the pills are hidden from them)
   const g = curTgt && DATA.targets[curTgt], rarOn = state.cat === "art" && state.rar !== "all", cat = CATS.find(c => c[0] === state.cat);
   $("tb-summary").textContent = [sh.name, m.label, g ? `targeting ${g.n}` : "", `${s} stars`, cat[1], rarOn ? RARITIES[state.rar] : "",
-    `Zero-G ${state.zerog}`, sh.ftl ? `FTL ${state.ftl}` : "", `${state.odds}% odds`].filter(Boolean).join(", ");
+    DCAP_NAME[state.dcap] || "", `Zero-G ${state.zerog}`, sh.ftl ? `FTL ${state.ftl}` : "", `${state.odds}% odds`].filter(Boolean).join(", ");
   const pills = [
     tbPill(sh.name, { ico: `<img class="ship-ico" src="${icon(sh.icon)}" alt="">`, short: "" }),
     tbPill(m.label, { ico: `<i class="len-dot l${state.len}"></i>`, short: "" }),
@@ -1288,6 +1327,7 @@ function renderTop(sh, m, s){
     tbPill(`${s}★`),
     tbPill(cat[1], { short: cat[2] }),
     rarOn ? tbPill(RARITIES[state.rar], { ico: `<i class="len-dot rd${state.rar}"></i>`, short: "", cls: `r${state.rar}` }) : "",
+    state.dcap > 1 ? tbPill(DCAP_NAME[state.dcap].replace(/^./, c => c.toUpperCase()), { ico: `<img class="item-ico" src="${icon(DCAP_ICON)}" alt="">`, short: `${state.dcap}×`, cls: `x${state.dcap}` }) : "",
     tbPill(`Zero-G ${state.zerog}`, { ico: ZEROG_SVG, short: `${state.zerog}` }),
     tbPill(`FTL ${state.ftl}`, { ico: FTL_SVG, short: `${state.ftl}`, cls: sh.ftl ? "" : "off" }),
     tbPill(`${state.odds}% odds`, { short: `${state.odds}%`, style: `color:${oddsColor(state.odds)}` }),
@@ -1307,10 +1347,11 @@ function renderTop(sh, m, s){
     if (bi.getAttribute("src") !== src) bi.src = src;
     badge.setAttribute("aria-label", `Target: ${g.n}`); badge.dataset.tip = `<b>Target</b><br>${g.n}`;
   }
-  $("hero-kicker").textContent = `${m.label} mission · ${curTgt ? `targeting ${DATA.targets[curTgt].n}` : "untargeted"}`;
+  $("hero-kicker").textContent = `${m.label} mission · ${curTgt ? `targeting ${DATA.targets[curTgt].n}` : "untargeted"}${state.dcap > 1 ? ` · ${DCAP_NAME[state.dcap]}` : ""}`;
   $("hero-title").textContent = sh.name;
   const qTop = m.qMax + m.qBump * s;
-  const capNote = state.zerog ? ` <span class="dim">(+${N("h|capn", state.zerog * 5, "int")}%)</span>` : "";
+  // One percentage for Zero-G and the event together (+200% for both at full), so it rolls when either changes
+  const capNote = capMult() > 1 ? ` <span class="dim">(+${N("h|capn", Math.round((capMult() - 1) * 100), "int")}%)</span>` : "";
   const timeNote = !sh.ftl ? ` <span class="dim">(FTL n/a)</span>` : state.ftl ? ` <span class="dim">(−${N("h|ftln", state.ftl, "int")}%)</span>` : "";
   setHTML($("hero-stats"), () => `<span><b>${N("h|s", s, "int")}★</b> of ${sh.maxStars}</span><span>${heroTip("Capacity", HERO_TIPS.cap)} <b>${N("h|cap", capAt(s), "int")}</b>${capNote}</span><span>${heroTip("Time", HERO_TIPS.time)} <b>${N("h|time", seconds(), "dur")}</b>${timeNote}</span><span>${heroTip("Quality", HERO_TIPS.q)} <b>${m.qMin}&nbsp;–&nbsp;${N("h|q", qTop, "f2")}</b></span>`);
 

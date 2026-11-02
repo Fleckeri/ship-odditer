@@ -11,6 +11,7 @@ OUT = os.path.join(ROOT, "app", "icons")
 os.makedirs(OUT, exist_ok=True)
 data = json.load(open(os.path.join(ROOT, "app", "data.json")))
 want = {(it["i"], 64) for it in data["items"].values()} | {(sh["icon"], 128) for sh in data["ships"]}
+want.add(("icon_afx_chest_2.webp", 64))  # the page's capacity event toggle (the game's capacity event icon)
 missing = []
 for name, size in sorted(want):
     src = os.path.join(ASSETS, str(size), "egginc", name)

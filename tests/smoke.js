@@ -63,6 +63,16 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
       await p.evaluate(() => document.querySelector('[data-k="t3|tgt"]').scrollIntoView());  // off-screen tables catch up when seen
       await p.waitForTimeout(600);
       check(await p.evaluate(k0 => document.querySelector('[data-k="t3|tgt"]').dataset.v !== k0, k0), 'target line follows the Zero-G slider');
+      // Capacity event toggle: off → 2× → 3× → off (Zero-G is 0 here, so capacity is exactly ×2 and ×3); the mission
+      // card, button, and folded-toolbar summary follow
+      const cap0 = await p.evaluate(() => capAt(state.star));
+      const dcap = () => p.evaluate(() => [capAt(state.star), +document.querySelector('[data-k="h|cap"]').dataset.v, document.getElementById('dcap').dataset.x, document.getElementById('hero-kicker').textContent, document.getElementById('tb-summary').textContent]);
+      await p.click('#dcap'); await p.waitForTimeout(400); const d2 = await dcap();
+      await p.click('#dcap'); await p.waitForTimeout(400); const d3 = await dcap();
+      await p.click('#dcap'); await p.waitForTimeout(400); const d1 = await dcap();
+      check(d2[0] === cap0 * 2 && d2[1] === d2[0] && d2[2] === '2' && /double capacity/.test(d2[3]) && /double capacity/.test(d2[4])
+        && d3[0] === cap0 * 3 && d3[1] === d3[0] && d3[2] === '3' && /triple capacity/.test(d3[3]) && /triple capacity/.test(d3[4])
+        && d1[0] === cap0 && d1[2] === '1' && !/capacity/.test(d1[3]), `capacity event toggle cycles off → 2× → 3× → off (${cap0}: ${JSON.stringify([d2, d3, d1])})`);
       check(await p.evaluate(() => warmIcons.length > 40 && warmIcons.every(im => im.complete && im.naturalWidth > 0)), 'dropdown icons preloaded');
       // Rolling numbers stay inside their (fixed-width) cells while a slider moves: BCR stones at 0★ used to spill over
       const spill = await p.evaluate(async () => {
@@ -113,11 +123,11 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
   // Damaged or old saved settings fall back to defaults instead of breaking the page
   {
     const ctx = await b.newContext(); const p = await ctx.newPage(); const errs = [];
-    await ctx.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('mission-odds', JSON.stringify({ ship: 'nope', len: 7, star: 'x', rar: 9, cat: 'bogus', zerog: 'abc', ftl: -5, odds: 500, target: '48', sort: 'type' })); sessionStorage.setItem('seeded', '1'); } });
+    await ctx.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('mission-odds', JSON.stringify({ ship: 'nope', len: 7, star: 'x', rar: 9, cat: 'bogus', zerog: 'abc', dcap: 'yes', ftl: -5, odds: 500, target: '48', sort: 'type' })); sessionStorage.setItem('seeded', '1'); } });
     p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && !ignore(m.text()) && errs.push(m.text()));
     await p.goto(srv.url); await p.waitForFunction(() => document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 }).catch(() => {});
-    const st = await p.evaluate(() => JSON.stringify([state.ship, state.len, state.star, state.rar, state.cat, state.zerog, state.ftl, state.odds, curTgt]));
-    check(errs.length === 0 && st === JSON.stringify(['atreggies', 2, 8, 'all', 'art', 10, 0, 99, null]), `damaged saved settings are repaired ${st} ${errs.join(' | ')}`);
+    const st = await p.evaluate(() => JSON.stringify([state.ship, state.len, state.star, state.rar, state.cat, state.zerog, state.dcap, state.ftl, state.odds, curTgt]));
+    check(errs.length === 0 && st === JSON.stringify(['atreggies', 2, 8, 'all', 'art', 10, 1, 0, 99, null]), `damaged saved settings are repaired ${st} ${errs.join(' | ')}`);
     await ctx.close();
   }
   // A browser that can't install shows neither the link nor the panel; an installed app says it's installed

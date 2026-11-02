@@ -131,7 +131,10 @@ download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails 
 
 ## Formulas (verified against carpetsage/egg `lib/missions.ts` on 31 Oct 2026)
 
-- **Capacity** = `floor((capacity + levelCapacityBump × stars) × (1 + 0.05 × ZeroG))`, ZeroG 0-10 (`boostedCapacity`).
+- **Capacity** = `floor((capacity + levelCapacityBump × stars) × (1 + 0.05 × ZeroG) × event)`, ZeroG 0-10
+  (`boostedCapacity`); `event` is the capacity event toggle's 1, 2, or 3 (`state.dcap`, in `capMult()`). Upstream tools don't model
+  capacity events, so rounding once at the end is our assumption (the game may differ by one item). Every
+  `mission-capacity` event in `periodicals/data/events.json` is ×2 but one (×3).
 - **Duration** = `seconds × (1 − 0.01 × FTL)`, FTL 0-60, only for ships ≥ Quintillion Chicken (`isFTL`).
 - **Quality range** shown as `minQuality – (maxQuality + levelQualityBump × stars)`, matching the mission-list tool.
 - **Star thresholds** are cumulative sums of `levelMissionRequirements`. **Launch points**: 1 / 1.4 / 1.8 per
@@ -156,7 +159,7 @@ download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails 
 ## Page architecture (app/ship-odditer.html)
 
 **State** (`state`): `ship, len (0-2), target ("none"|afxId), star, rar ("all"|0-3), cat ("art"|"stone"|"ing"),
-zerog (0-10), ftl (0-60), odds (1-99), sort ("tier"|"rarity")`. Saved to `localStorage["mission-odds"]`
+zerog (0-10), dcap (1|2|3, capacity event multiplier; an early save's `true` loads as 2), ftl (0-60), odds (1-99), sort ("tier"|"rarity")`. Saved to `localStorage["mission-odds"]`
 (debounced; flushed on `pagehide`) and **validated field by field on load** (old or damaged saves fall back to
 defaults). Theme: `localStorage["mission-odds-theme"]`. Dismissed install panel:
 `localStorage["mission-odds-install-dismissed"]`. After an update's reload, `sessionStorage["mission-odds-updated"]` briefly holds your place. Keep these key names, or existing users lose their settings.
@@ -271,8 +274,17 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   art mostly points down-right).
 - **Sliders.** Zero-G and FTL purple (epic research). The Odds slider (1-99%, default 50%) is one solid colour that
   shifts blue → purple → orange (oklch mix) with its value.
+- **Capacity event toggle.** An unlabelled square button between Target and Zero-G with the game's capacity
+  event icon (`icon_afx_chest_2.webp`, added to `copy_icons.py`). Each click goes off → 2× → 3× → off (real events are
+  almost all 2×; there has been one 3×). 2× fills it rare blue, 3× epic purple. Capacity follows everywhere (it takes
+  the slider path); its tooltip, `aria-label`, mission card kicker ("· double capacity" / "· triple capacity"),
+  capacity note (one percentage with Zero-G: +200% / +350% at Zero-G 10), and folded-toolbar pill (same colours,
+  "2×"/"3×" beside the icon on narrow screens) all name the state. `paintDcap()` updates the button at once on click,
+  and the tooltip rebuilds when a text tip changes under the pointer, so the tip shown by the click is already the new
+  one. In the compact toolbar it shares the Target row (`.tgt-pair`, `display:contents` when wide).
 - **Toolbar.** One sticky toolbar, sticky only through the tables and simulator (`.stick-span` wraps them; it
-  scrolls away before Nerd Stuff and comes back on the way up): row 1 Ship, Length, Target, Zero-G, FTL, Odds (one line from 1280 px, even
+  scrolls away before Nerd Stuff and comes back on the way up): row 1 Ship, Length, Target, capacity event toggle,
+  Zero-G, FTL, Odds (one line from 1280 px, even
   with the longest target name; wraps below that); row 2 Stars, Items, Rarity. Kept compact for vertical space:
   the Length button shows only the length, slider tracks are 72 px, the page is at most 1280 px wide. On phones
   and short landscape screens (same breakpoint as the icon-only tables), everything folds behind one summary
