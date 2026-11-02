@@ -11,6 +11,7 @@
   "license": "MIT",
   "scripts": {
     "build": "python3 tools/build_pwa.py",
+    "dev": "node tools/dev.js",
     "data": "python3 tools/build_data.py && python3 tools/copy_icons.py",
     "test": "python3 tools/build_pwa.py && node tests/smoke.js",
     "bench": "node tests/bench.js top"

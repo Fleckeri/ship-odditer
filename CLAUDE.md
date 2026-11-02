@@ -46,11 +46,21 @@ Needs Python 3.10+ with Pillow and NumPy (SciPy only for `fit_egg.py`), and Node
 ```bash
 tools/update_data.sh            # fetch upstream (sparse, blobless clones in vendor/), build data, icons, and docs/
 python3 tools/build_pwa.py      # rebuild docs/ only, after editing the page
+npm run dev                     # serve docs/ at localhost:8017, rebuild on save, reload open tabs (no service worker)
 node tests/smoke.js             # must print "all checks passed"
 node tests/bench.js top         # slider frame times; compare before/after changes to update paths
 python3 tools/make_icons.py     # only to regenerate app/app-icons/*.png (style "bands" is the chosen design)
 python3 tools/make_symbols_font.py  # only to regenerate app/fonts/odditer-symbols-*.woff2 (needs fontTools, brotli)
 ```
+
+**Dev server** (`tools/dev.js`, no dependencies). Polls `app/ship-odditer.html`, `app/data.json`, and
+`tools/build_pwa.py`, reruns `build_pwa.py` on a change, and tells open tabs to reload over an EventSource
+(`/__dev/events`; the script is injected into `index.html`, allowed by the CSP as same-origin). It serves a stand-in
+`/sw.js` that clears the caches and unregisters itself, and sends everything `no-store`, so one reload always shows
+the latest build. Starting it again stops the running one (`/__dev/stop`) and takes the port. Use the smoke test,
+not the dev server, to check service-worker behaviour. In Claude Code's sandbox it needs
+`sandbox.network.allowLocalBinding` (set in `.claude/settings.local.json`), and you start it as `node tools/dev.js`
+(npm itself exits 255 there).
 
 `update_data.sh` clones or fast-forwards `vendor/egg` (data folders only) and `vendor/eggincassets` (64 and 128 px
 icons only), sets `DATA_DATE` to upstream's commit date and `UPSTREAM_COMMIT` to its commit, then runs
