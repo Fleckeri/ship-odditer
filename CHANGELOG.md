@@ -2,6 +2,18 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.3.0 (2026-11-02)
+
+- A capacity event toggle beside Target: click once for double capacity, twice for triple (the rare 3× events), and a
+  third time to turn it off. Capacity, the odds, and the simulator follow, and the mission card says which event is on.
+- Tier tables keep their column labels in view while you scroll through them, and the toolbar casts a soft shadow
+  once it sticks, so it's clearly separate from what scrolls beneath it.
+- Shorter tier summaries ("All in one launch" · "At 50% odds: all in 412 launches, ⌖ target in 12"), and the
+  single-rarity share column is now headed "% legendary" (or whichever rarity is chosen).
+- The simulator shows stone fragments in their own group at the end, in both the tiles and the list, and each group's
+  header stays in view while you scroll through it. Tier 1 in the Stones tables is now called "stone fragments".
+- For development: `npm run dev` serves the site locally and rebuilds and reloads it on every save.
+
 ## 1.2.0 (2026-11-01)
 
 - Updates apply by themselves: the app reloads into a new version at the first quiet moment, keeps your place,
