@@ -1,6 +1,6 @@
 {
   "name": "ship-odditer",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "Ship Odditer: Egg Inc. mission drop calculator (build tooling and tests)",
   "homepage": "https://fleckeri.github.io/ship-odditer/",

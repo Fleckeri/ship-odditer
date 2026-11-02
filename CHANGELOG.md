@@ -2,6 +2,20 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.4.0 (2026-11-02)
+
+- Share what you're looking at: the button on the mission card opens the share sheet on phones and copies a link on
+  computers. The short link opens exactly the same view: ship, length, stars, target, table options, research, odds,
+  and capacity event. Opening one saves it as your settings and leaves the address bar clean.
+- Share your simulated haul as a picture (or save it, on computers).
+- Installed, long-press the app icon (or right-click it on a computer) for shortcuts to the three newest ships'
+  extended missions and the simulator. They keep your star level, target, and research.
+- Chrome and Edge show screenshots in the install dialog, and iPhones and iPads show the app's eggs instead of a
+  white screen while the installed app starts.
+- Switching themes spreads the new one from the button; switching ships flies the old one out and the new one in.
+- Android phones buzz when a relaunch brings a legendary.
+- Installed copies ask the browser to keep their offline data even when the device is low on space.
+
 ## 1.3.0 (2026-11-02)
 
 - A capacity event toggle beside Target: click once for double capacity, twice for triple (the rare 3× events), and a
