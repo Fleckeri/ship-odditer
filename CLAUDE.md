@@ -7,7 +7,7 @@ Context for anyone (human or Claude) continuing development. Read this before ch
 **Ship Odditer** ("Egg Inc. Mission Drop Calculator") is a single-page web app. For any Egg, Inc. spaceship,
 mission length (Short / Standard / Extended), target, and star level, it shows the chance of getting each
 artifact, stone, and ingredient from one mission, by rarity, plus a mission reward simulator. All maths runs in
-the browser from pre-built data files. Version 1.4.0 (Nov 2026); see `CHANGELOG.md`.
+the browser from pre-built data files. Version 1.4.1 (Nov 2026); see `CHANGELOG.md`.
 
 It ships one way: an **installable, offline-capable PWA** at <https://fleckeri.github.io/ship-odditer/>, built and
 deployed by GitHub Actions (`.github/workflows/deploy.yml`; Pages source "GitHub Actions"). The workflow fetches

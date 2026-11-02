@@ -2,6 +2,11 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.4.1 (2026-11-02)
+
+- Sharing the simulated haul from a phone also sends a link to the same view, so whoever sees the picture can open
+  that mission.
+
 ## 1.4.0 (2026-11-02)
 
 - Share what you're looking at: the button on the mission card opens the share sheet on phones and copies a link on
