@@ -229,8 +229,9 @@ needs `min-width: 0`: as a grid item it would otherwise grow to its table's full
 `scrollLeft` to it. CSS sticky keeps it smooth on iOS, where moving it from a scroll handler would lag a frame.
 
 **Motion.** `snapRows`/`flipRows` slide table rows (FLIP) and ease section heights (`FLIP_MS` 300);
-`snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch. View transitions, where supported:
-the theme button spreads the new theme in a growing circle from the button (skipped when Auto changes nothing), and
+`snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch, and `buzz()` vibrates once (90 ms)
+when a relaunch brings any legendary (Android only; iOS has no web vibration). View transitions, where supported: the
+theme button spreads the new theme in a growing circle from the button (skipped when Auto changes nothing), and
 picking a ship while the mission card is on screen flies the old ship off down-right as the new one arrives
 (`shipTransition`; the `ship` view-transition name is set only for that transition; the new view is captured once
 `render()`, which returns its target-loading promise, and the picture are done). The page itself swaps instantly
@@ -358,6 +359,7 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   (the 12-character code), and never stay in the address bar: a link is applied, saved, and cleared.
 - **Share buttons.** A round button on the mission card's top right (link icon on desktops, share icon on phones);
   "Share" / "Save picture" beside Relaunch for the haul picture.
+- **Vibration** (owner, Nov 2026): one short buzz when a relaunch brings any legendary, not one per legendary.
 - **Nerd Stuff** (was "How to read this") at the bottom, then a three-line footer: credit and GitHub link;
   sources; data date and "Not affiliated with Auxbrain".
 - **Text style.** Oxford comma in user-facing lists. Words inside running text match it in case, size, and
@@ -424,7 +426,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   and saying so, and works offline; a target picked after a takeover reloads into the new version); links (open their
   view with research and all and leave the address clean, a shorter code keeps the rest, `#sim`, unknown values
   ignored, a copied link opens the same view in a fresh browser); sharing (desktop copies the link and saves a 1080 px
-  haul PNG; phones use the share sheet, stubbed); view transitions for theme and ship.
+  haul PNG; phones use the share sheet, stubbed); view transitions for theme and ship; one buzz when a relaunch brings
+  a legendary.
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.

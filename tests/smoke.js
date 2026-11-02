@@ -239,12 +239,14 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(errs.length === 0, `links and sharing: no script errors ${errs.join(' | ')}`);
     await ctx.close();
   }
-  // Phones: both buttons use the share sheet (stubbed: headless Chromium has none)
+  // Phones: both buttons use the share sheet (stubbed: headless Chromium has none); a relaunch that brings a legendary
+  // buzzes once
   {
     const ctx = await b.newContext(devices['iPhone 13']); const p = await ctx.newPage();
     await ctx.addInitScript(() => {
-      window.__shared = [];
+      window.__shared = []; window.__vib = [];
       navigator.share = async d => { __shared.push(d); }; navigator.canShare = d => !!(d && d.files);
+      navigator.vibrate = pat => { __vib.push(pat); return true; };
     });
     await p.goto(srv.url + '#a28');  // Atreggies Henliner, extended, 8★
     await p.waitForFunction(() => document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 });
@@ -255,6 +257,16 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     await p.click('#share-haul'); await p.waitForFunction(() => __shared.length === 2, null, { timeout: 10000 }).catch(() => {});
     const s2 = await p.evaluate(async () => { const f = __shared[1] && __shared[1].files && __shared[1].files[0]; return f ? [f.type, (await createImageBitmap(f)).width] : null; });
     check(JSON.stringify(s2) === '["image/png",1080]', `phones share the haul picture with the share sheet ${JSON.stringify(s2)}`);
+    const buzzes = await p.evaluate(() => {
+      const out = [];
+      for (let i = 0; i < 6; i++) {
+        const before = __vib.length; document.getElementById('reroll').click();
+        const legend = reward.some(([, r]) => r === 3), buzzed = __vib.length - before;
+        out.push(legend ? buzzed === 1 && __vib[__vib.length - 1] === 90 : buzzed === 0);
+      }
+      return out;
+    });
+    check(buzzes.every(Boolean), `a relaunch buzzes once when it brings a legendary ${JSON.stringify(buzzes)}`);
     await ctx.close();
   }
   // PWA: installable and works offline

@@ -1370,7 +1370,7 @@ function wire(){
   // While a finger or mouse is on a slider, pause the decorative shine so every frame goes to the numbers
   for (const id of ["zerog", "ftl", "odds"]) $(id).addEventListener("pointerdown", () => document.body.classList.add("dragging"));
   for (const ev of ["pointerup", "pointercancel", "blur"]) addEventListener(ev, () => document.body.classList.remove("dragging"));
-  const relaunch = e => { launches++; rollReward(); renderReward(); rumble(e.currentTarget); };
+  const relaunch = e => { launches++; rollReward(); renderReward(); rumble(e.currentTarget); buzz(); };
   $("reroll").addEventListener("click", relaunch);
   $("reroll-float").addEventListener("click", relaunch);
   // Share buttons: the share sheet on phones and tablets; a copied link or a saved picture elsewhere
@@ -1886,6 +1886,10 @@ function rumble(el){
     frames.push({ transform: `translate(${(sx * 1.6 * a).toFixed(2)}px, ${(sy * 0.8 * a).toFixed(2)}px) rotate(${(-sx * 0.7 * a).toFixed(2)}deg)` });
   }
   el.animate(frames, { duration: 1000, easing: "linear" });
+}
+// One short buzz when a relaunch brings a legendary, on phones that can (Android; iOS has no vibration for the web)
+function buzz(){
+  if (reward && navigator.vibrate && reward.some(([, r]) => r === 3)) navigator.vibrate(90);
 }
 
 /* Switching ships: when the mission card is on screen and the browser has view transitions, the old ship flies off
