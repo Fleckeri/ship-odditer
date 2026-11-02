@@ -229,8 +229,12 @@ needs `min-width: 0`: as a grid item it would otherwise grow to its table's full
 `scrollLeft` to it. CSS sticky keeps it smooth on iOS, where moving it from a scroll handler would lag a frame.
 
 **Motion.** `snapRows`/`flipRows` slide table rows (FLIP) and ease section heights (`FLIP_MS` 300);
-`snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch. Everything respects
-`prefers-reduced-motion`.
+`snapGrid`/`flipGrid` do the same for reward tiles; `rumble()` shakes Relaunch. View transitions, where supported:
+the theme button spreads the new theme in a growing circle from the button (skipped when Auto changes nothing), and
+picking a ship while the mission card is on screen flies the old ship off down-right as the new one arrives
+(`shipTransition`; the `ship` view-transition name is set only for that transition; the new view is captured once
+`render()`, which returns its target-loading promise, and the picture are done). The page itself swaps instantly
+(`::view-transition-*(root)` animations are off). Everything respects `prefers-reduced-motion`.
 
 **Links.** A share link carries every setting as a 12-character code, e.g. `#a280a0a1o1e0` (`linkCode`): fixed-width
 base-36 fields, in order: ship (its place in `DATA.ships`, the game's own order; `build_data.py`'s `SHIPS` is
@@ -420,7 +424,7 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   and saying so, and works offline; a target picked after a takeover reloads into the new version); links (open their
   view with research and all and leave the address clean, a shorter code keeps the rest, `#sim`, unknown values
   ignored, a copied link opens the same view in a fresh browser); sharing (desktop copies the link and saves a 1080 px
-  haul PNG; phones use the share sheet, stubbed).
+  haul PNG; phones use the share sheet, stubbed); view transitions for theme and ship.
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.

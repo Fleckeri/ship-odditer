@@ -229,6 +229,13 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     const file = await (await dl).path(), png = require('fs').readFileSync(file);
     const [pw, ph] = [png.readUInt32BE(16), png.readUInt32BE(20)];
     check(png.toString('latin1', 1, 4) === 'PNG' && pw === 1080 && ph > 400, `the haul is saved as a picture (${pw} × ${ph})`);
+    // View transitions: the theme spreads from its button; a new ship flies in (the page's own swap is instant)
+    await p.evaluate(() => { const st = document.startViewTransition.bind(document); window.__vt = 0; document.startViewTransition = f => { __vt++; return st(f); }; });
+    await p.evaluate(() => scrollTo(0, 0)); await p.waitForTimeout(100);  // the ship flies only where the mission card is in view
+    await p.click('#theme'); await p.waitForTimeout(700);
+    await p.click('#ship-dd .dd-btn'); await p.click('#ship-dd li:has-text("Henerprise")'); await p.waitForTimeout(900);
+    const vt = await p.evaluate(() => [__vt, document.documentElement.dataset.theme, state.ship, document.getElementById('ship-img').getAttribute('src'), document.getElementById('ship-img').style.viewTransitionName]);
+    check(JSON.stringify(vt) === '[2,"light","henerprise","icons/afx_ship_henerprise.webp",""]', `theme and ship changes run view transitions ${JSON.stringify(vt)}`);
     check(errs.length === 0, `links and sharing: no script errors ${errs.join(' | ')}`);
     await ctx.close();
   }
