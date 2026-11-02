@@ -302,6 +302,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   "2×"/"3×" beside the icon on narrow screens) all name the state. `paintDcap()` updates the button at once on click,
   and the tooltip rebuilds when a text tip changes under the pointer, so the tip shown by the click is already the new
   one. In the compact toolbar it shares the Target row (`.tgt-pair`, `display:contents` when wide).
+- **Toolbar edge.** Once stuck to the top (`.controls.stuck`, from a once-a-frame scroll check), the toolbar's bottom
+  border darkens (`--tb-edge`) and it casts a soft shadow (`--tb-shadow`), so it reads as a layer over the tables.
 - **Toolbar.** One sticky toolbar, sticky only through the tables and simulator (`.stick-span` wraps them; it
   scrolls away before Nerd Stuff and comes back on the way up): row 1 Ship, Length, Target, capacity event toggle,
   Zero-G, FTL, Odds (one line from 1280 px, even

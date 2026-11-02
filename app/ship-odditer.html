@@ -23,7 +23,7 @@
   --common:#6b7684; --rare:#2f7fd6; --epic:#8a4fd1; --legend:#c98612; --tgt:#299b4f; --ok:#299b4f;
   --common-soft:#eef0f3; --rare-soft:#e4eefb; --epic-soft:#f0e8fa; --legend-soft:#fbf1dc;
   --heat0:#eef1f5; --warn:#a15c00; --warn-soft:#fff3df; --bad:#b42318; --bad-soft:#fdecea;
-  --sb-thumb:#b9c3cf; --sb-track:#e9edf2;
+  --sb-thumb:#b9c3cf; --sb-track:#e9edf2; --tb-edge:#b9c3cf; --tb-shadow:rgba(23,32,43,.16);
   --font-display:"Chakra Petch", "Odditer Symbols", "Segoe UI", system-ui, sans-serif;
   --font-body:"Atkinson Hyperlegible", "Odditer Symbols", "Segoe UI", system-ui, sans-serif;
   /* Type scale: every font size on the page is one of these (body text is 15px) */
@@ -42,14 +42,14 @@
   --common:#a9b4c2; --rare:#6aaef5; --epic:#b98af0; --legend:#f0b54a; --tgt:#68c77f; --ok:#68c77f;
   --common-soft:#1d2530; --rare-soft:#16273d; --epic-soft:#241c36; --legend-soft:#2e2414;
   --heat0:#1c2531; --warn:#f0b54a; --warn-soft:#2e2414; --bad:#f87171; --bad-soft:#3a1c1c;
-  --sb-thumb:#3a4657; --sb-track:#121821; color-scheme:dark } }
+  --sb-thumb:#3a4657; --sb-track:#121821; --tb-edge:#3a4657; --tb-shadow:rgba(0,0,0,.55); color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#0f141b; --surface:#161d27; --fg:#e6ebf2; --muted:#93a0b1; --line:#2a3443;
   --accent:#6ea3ff; --space:#0a1020; --space-fg:#e8eef8;
   --common:#a9b4c2; --rare:#6aaef5; --epic:#b98af0; --legend:#f0b54a; --tgt:#68c77f; --ok:#68c77f;
   --common-soft:#1d2530; --rare-soft:#16273d; --epic-soft:#241c36; --legend-soft:#2e2414;
   --heat0:#1c2531; --warn:#f0b54a; --warn-soft:#2e2414; --bad:#f87171; --bad-soft:#3a1c1c;
-  --sb-thumb:#3a4657; --sb-track:#121821; color-scheme:dark }
+  --sb-thumb:#3a4657; --sb-track:#121821; --tb-edge:#3a4657; --tb-shadow:rgba(0,0,0,.55); color-scheme:dark }
 :root[data-theme="light"]{color-scheme:light}
 
 /* Scrollbars follow the page theme, including the manual toggle */
@@ -121,7 +121,11 @@ h2{font-size:var(--fs-h2);font-weight:600}
    Stuff (a sticky element sticks only inside its parent) and comes back when you scroll up */
 .stick-span{display:grid;gap:20px}
 .stick-span > *{min-width:0}
-.controls{position:sticky;top:env(safe-area-inset-top, 0px);z-index:8;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.controls{position:sticky;top:env(safe-area-inset-top, 0px);z-index:8;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px;
+  transition:box-shadow .2s ease,border-color .2s ease}
+/* Stuck to the top (class set from script), the toolbar firms up its edge and casts a soft shadow, so it reads as a
+   layer above the tables scrolling under it rather than part of them */
+.controls.stuck{border-bottom-color:var(--tb-edge);box-shadow:0 8px 14px -8px var(--tb-shadow)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:10;background:var(--bg)}
 .tb-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
 .tb-mission{padding-bottom:8px;border-bottom:1px dashed var(--line)}
@@ -1290,6 +1294,13 @@ function wire(){
   }, { capture: true, passive: true });
   // Pinned label rows sit just under the sticky toolbar, whatever its height (it wraps, folds, and opens)
   new ResizeObserver(() => document.documentElement.style.setProperty("--pin-top", $("controls").offsetHeight + "px")).observe($("controls"));
+  // The toolbar is stuck once it reaches its sticky offset (the safe-area inset); checked at most once a frame
+  const bar = $("controls"); let barTop = 0, barRaf = 0;
+  const barOffset = () => { barTop = parseFloat(getComputedStyle(bar).top) || 0; };
+  const paintBar = () => { barRaf = 0; bar.classList.toggle("stuck", scrollY > 0 && bar.getBoundingClientRect().top <= barTop + 0.5); };
+  barOffset(); paintBar();
+  addEventListener("scroll", () => { if (!barRaf) barRaf = requestAnimationFrame(paintBar); }, { passive: true });
+  addEventListener("resize", () => { barOffset(); paintBar(); }, { passive: true });
   document.fonts.ready.then(measureBand);
   $("tb-toggle").addEventListener("click", () => {
     const open = $("controls").classList.toggle("open");
