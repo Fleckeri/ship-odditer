@@ -3,16 +3,18 @@
 
 Usage:  python3 tools/build_pwa.py
 Output: docs/  index.html, manifest.webmanifest, sw.js, version.json, sitemap.xml, data.json, targeted/*.json,
-               icons/*.webp, app-icons/*.png, fonts/*, .nojekyll   (docs/ is generated and not tracked by git)
+               icons/*.webp, app-icons/*.png, fonts/*, launch/*.png, screenshots/*.png, .nojekyll
+               (docs/ is generated and not tracked by git)
 Re-run after editing app/ship-odditer.html, app/data.json, or the icons (tools/update_data.sh runs it for you).
 The service-worker cache version is a hash of every file, so installed copies pick up a new build by themselves.
 """
-import base64, datetime, hashlib, json, os, re, shutil, subprocess, sys
+import base64, datetime, hashlib, json, os, re, shutil, struct, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 SRC = os.path.join(ROOT, "app", "ship-odditer.html")
 SITE = os.path.join(ROOT, "app")
 OUT = os.path.join(ROOT, "docs")
 os.makedirs(OUT, exist_ok=True)
+data = json.load(open(os.path.join(SITE, "data.json")))
 
 page = open(SRC, encoding="utf-8").read()
 cut = page.index("</style>") + len("</style>")
@@ -70,6 +72,14 @@ pwa_head = """<meta name="description" content="%(desc)s">
 <meta name="author" content="Fleckeri">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <script type="application/ld+json">%(ld)s</script>""" % {"url": SITE_URL, "title": SHARE_TITLE, "desc": SHARE_DESC, "ld": json.dumps(STRUCTURED, separators=(",", ":"))}
+# iOS launch screens (tools/make_launch_screens.py): iOS shows the one whose media query matches the device exactly,
+# instead of a white screen while the installed app starts. Named by the portrait size in CSS pixels, so device-width
+# and device-height are the same in either orientation.
+LAUNCH = os.path.join(SITE, "launch")
+for f in sorted(os.listdir(LAUNCH)) if os.path.isdir(LAUNCH) else []:
+    m = re.fullmatch(r"ios-(\d+)x(\d+)@(\d)-(portrait|landscape)\.png", f)
+    if m: pwa_head += ('\n<link rel="apple-touch-startup-image" media="screen and (device-width: %spx) and (device-height: %spx) and '
+                       '(-webkit-device-pixel-ratio: %s) and (orientation: %s)" href="launch/%s">' % (*m.groups(), f))
 # App version (from package.json) shown in the page footer and recorded in version.json
 APP_VERSION = json.load(open(os.path.join(ROOT, "package.json")))["version"]
 body_part = body_part.replace("__APP_VERSION__", APP_VERSION)
@@ -117,11 +127,32 @@ if os.path.isdir(os.path.join(OUT, "app-icons")): shutil.rmtree(os.path.join(OUT
 shutil.copytree(os.path.join(SITE, "app-icons"), os.path.join(OUT, "app-icons"))
 if os.path.isdir(os.path.join(OUT, "fonts")): shutil.rmtree(os.path.join(OUT, "fonts"))
 shutil.copytree(os.path.join(SITE, "fonts"), os.path.join(OUT, "fonts"))  # self-hosted fonts and their licences
+# Launch screens and install-dialog screenshots: fetched only by the system when installing, so they aren't precached
+for d in ("launch", "screenshots"):
+    if os.path.isdir(os.path.join(OUT, d)): shutil.rmtree(os.path.join(OUT, d))
+    if os.path.isdir(os.path.join(SITE, d)): shutil.copytree(os.path.join(SITE, d), os.path.join(OUT, d))
 open(os.path.join(OUT, ".nojekyll"), "w").close()  # serve files as-is on GitHub Pages
 # A one-page sitemap, for submitting the site in Google Search Console / Bing Webmaster Tools
 open(os.path.join(OUT, "sitemap.xml"), "w").write(
     '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     f'  <url><loc>{SITE_URL}</loc><lastmod>{datetime.date.today().isoformat()}</lastmod></url>\n</urlset>\n')
+
+# Home-screen shortcuts (long-press the app icon, or right-click it on a desktop): the newest ships' extended missions,
+# from the data, so a new ship gets one by itself, and the simulator. A link code that stops after the ship and length
+# (its place in the list in base 36, then 2 for extended) leaves everything else as you had it (see linkCode in the page).
+shortcuts = [{"name": f"{s['name']} · Extended", "short_name": s["name"], "url": "./#%s2" % "0123456789abcdefghijklmnopqrstuvwxyz"[i],
+              "icons": [{"src": "icons/" + s["icon"], "sizes": "128x128", "type": "image/webp"}]}
+             for i, s in reversed([(i, s) for i, s in enumerate(data["ships"]) if s["ftl"]][-3:])]
+shortcuts.append({"name": "Mission Reward Simulator", "short_name": "Simulator", "url": "./#sim",
+                  "icons": [{"src": "app-icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]})
+# Screenshots for the richer install dialog (Chrome, Edge), made by tools/make_screenshots.js with their labels;
+# each one's size is read from its PNG header
+def png_size(path):
+    with open(path, "rb") as fh: return struct.unpack(">II", fh.read(24)[16:24])
+shots = os.path.join(SITE, "screenshots", "screenshots.json")
+screenshots = [{"src": "screenshots/" + s["file"], "sizes": "%dx%d" % png_size(os.path.join(SITE, "screenshots", s["file"])),
+                "type": "image/png", "form_factor": s["form_factor"], "label": s["label"]}
+               for s in (json.load(open(shots)) if os.path.exists(shots) else [])]
 
 manifest = {
     "name": "Ship Odditer",
@@ -135,6 +166,8 @@ manifest = {
     "background_color": "#0f1a2c",
     "theme_color": "#0f1a2c",
     "categories": ["games", "utilities"],
+    # A shortcut or link opened while the app is open goes to the open window instead of a second one
+    "launch_handler": {"client_mode": ["navigate-existing", "auto"]},
     "lang": "en",
     "dir": "ltr",
     "icons": [
@@ -143,6 +176,8 @@ manifest = {
         {"src": "app-icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
         {"src": "app-icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
     ],
+    "shortcuts": shortcuts,
+    "screenshots": screenshots,
 }
 open(os.path.join(OUT, "manifest.webmanifest"), "w").write(json.dumps(manifest, indent=2))
 
@@ -158,7 +193,7 @@ file_hash = {f: hashlib.sha256(open(os.path.join(OUT, f if f != "./" else "index
 version = hashlib.sha256(json.dumps(file_hash).encode()).hexdigest()[:12]  # names too, so a rename is a new version
 # What this build contains. The deploy workflow compares the live copy with the current commit and upstream data
 # to skip scheduled runs that would change nothing. Not precached: it's only read over the network.
-data_date = json.load(open(os.path.join(SITE, "data.json")))["dataUpdated"]
+data_date = data["dataUpdated"]
 open(os.path.join(OUT, "version.json"), "w").write(json.dumps({
     "app": APP_VERSION, "build": version, "data": data_date,
     "commit": os.environ.get("GITHUB_SHA", ""), "upstream": os.environ.get("UPSTREAM_COMMIT", ""),

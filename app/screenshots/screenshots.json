@@ -1,0 +1,22 @@
+[
+  {
+    "file": "wide-odds.png",
+    "form_factor": "wide",
+    "label": "Drop odds for every ship, mission length, target, and star level"
+  },
+  {
+    "file": "wide-sim.png",
+    "form_factor": "wide",
+    "label": "Mission Reward Simulator: one launch’s items by type, tier, and rarity"
+  },
+  {
+    "file": "narrow-odds.png",
+    "form_factor": "narrow",
+    "label": "Drop odds for every ship, mission length, target, and star level"
+  },
+  {
+    "file": "narrow-sim.png",
+    "form_factor": "narrow",
+    "label": "Mission Reward Simulator: one launch’s items by type, tier, and rarity"
+  }
+]

@@ -275,6 +275,18 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
   const cdp = await ctx.newCDPSession(p);
   const inst = (await cdp.send('Page.getInstallabilityErrors')).installabilityErrors;
   check(inst.length === 0, `PWA installable ${JSON.stringify(inst)}`);
+  // Shortcuts open their missions; screenshots and iOS launch screens are served at their stated sizes
+  const extras = await p.evaluate(async () => {
+    const man = await (await fetch('manifest.webmanifest')).json();
+    const size = src => new Promise(res => { const im = new Image(); im.onload = () => res(`${im.naturalWidth}x${im.naturalHeight}`); im.onerror = () => res('missing'); im.src = src; });
+    const shots = await Promise.all(man.screenshots.map(async s => (await size(s.src)) === s.sizes));
+    const launch = [...document.querySelectorAll('link[rel="apple-touch-startup-image"]')];
+    const m = /device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d)\) and \(orientation: (\w+)/.exec(launch[0].media);
+    const want = m[4] === 'portrait' ? `${m[1] * m[3]}x${m[2] * m[3]}` : `${m[2] * m[3]}x${m[1] * m[3]}`;
+    return { shortcuts: man.shortcuts.map(s => s.url), shots, launch: launch.length, first: (await size(launch[0].href)) === want };
+  });
+  check(extras.shortcuts.length === 4 && extras.shortcuts.every(u => /^\.\/#([0-9a-z]2|sim)$/.test(u)) && extras.shots.length === 4 && extras.shots.every(Boolean) && extras.launch > 20 && extras.first,
+    `manifest shortcuts, screenshots, and iOS launch screens ${JSON.stringify(extras)}`);
   await p.reload(); await p.waitForTimeout(800);
   check(await p.evaluate(() => !!navigator.serviceWorker.controller), 'service worker controls the page');
   await ctx.setOffline(true); await p.reload(); await p.waitForTimeout(1500);

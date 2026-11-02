@@ -47,6 +47,13 @@ node tests/smoke.js        # must end with "all checks passed"
 node tests/bench.js top    # slider frame times on a slowed, emulated phone; compare before/after
 ```
 
+## Install assets
+
+The iOS launch screens (`app/launch/`) and the install-dialog screenshots (`app/screenshots/`) are committed, since
+CI doesn't have Pillow. Regenerate them only when needed: `python3 tools/make_launch_screens.py` for a new iPhone or
+iPad screen size (add it to `DEVICES`) or a new icon, and `python3 tools/build_pwa.py && node tools/make_screenshots.js
+&& python3 tools/build_pwa.py` when the page looks noticeably different.
+
 ## Pull requests
 
 - Keep each PR to one topic and describe what changed and why.

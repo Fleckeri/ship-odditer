@@ -34,7 +34,8 @@ rewards.
 - **Honest about data quality**: values resting on few sightings are marked, and missions or targets with small
   samples are flagged.
 - **Always current**: the drop data refreshes daily, and installed copies update themselves.
-- **Installs as an app and works offline.** Light and dark themes, phone-friendly, keyboard and screen-reader
+- **Installs as an app and works offline**, with home-screen shortcuts to the newest ships and the simulator
+  (long-press the icon). Light and dark themes, phone-friendly, keyboard and screen-reader
   accessible. No accounts, no tracking, no third-party requests: nothing leaves your device.
 
 ## Use it
