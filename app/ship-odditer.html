@@ -1484,16 +1484,17 @@ function render(){
   };
   const out = [];
   for (let t = 1; t <= 4; t++) {
+    const what = state.cat === "stone" && t === 1 ? "stone fragments" : label;  // tier 1 stones are all fragments
     const inTier = [...allIds].filter(id => DATA.items[id].c === state.cat && DATA.items[id].t === t);
     const rows = inTier.filter(id => lam(id, r, s) > 0).sort((a, b) => lam(b, r, s) - lam(a, r, s));
     if (!inTier.length) {
-      out.push(`<section class="tier" data-t="${t}"><div class="tier-head"><h2>Tier ${t}</h2>${tgtLine(t, true)}</div><div class="empty">This mission doesn't drop tier ${t} ${label}.</div></section>`);
+      out.push(`<section class="tier" data-t="${t}"><div class="tier-head"><h2>Tier ${t}</h2>${tgtLine(t, true)}</div><div class="empty">This mission doesn't drop tier ${t} ${what}.</div></section>`);
       continue;
     }
     const everAt = id => { for (let k = 0; k <= sh.maxStars; k++) if (lam(id, r, k) > 0) return true; return false; };
     if (!rows.length) {
       const ever = inTier.some(everAt);
-      out.push(`<section class="tier" data-t="${t}"><div class="tier-head"><h2>Tier ${t}</h2>${tgtLine(t, true)}</div><div class="empty">${ever ? `No ${rarLabel}tier ${t} ${label} drop at ${s}★. Try another star level.` : `Tier ${t} ${label} never drop as ${rarLabel.trim()} from this mission.`}</div></section>`);
+      out.push(`<section class="tier" data-t="${t}"><div class="tier-head"><h2>Tier ${t}</h2>${tgtLine(t, true)}</div><div class="empty">${ever ? `No ${rarLabel}tier ${t} ${what} drop at ${s}★. Try another star level.` : `Tier ${t} ${what} never drop as ${rarLabel.trim()} from this mission.`}</div></section>`);
       continue;
     }
     const lams = rows.map(id => lamEff(id, r, s));
@@ -1526,7 +1527,7 @@ function render(){
     }
     out.push(`<section class="tier" data-t="${t}" aria-labelledby="h-t${t}">
       <div class="tier-head">
-        <h2 id="h-t${t}">Tier ${t} <span class="dim tier-n">· ${N(`t${t}|n`, rows.length, "int")} ${rarLabel}${label}</span></h2>
+        <h2 id="h-t${t}">Tier ${t} <span class="dim tier-n">· ${N(`t${t}|n`, rows.length, "int")} ${rarLabel}${what}</span></h2>
         <div class="summary dots">
           <span>All in one launch: <b>${N(`t${t}|all`, allOne, "pct")}</b></span>
           ${(tg => `<span>${oddsAt()}: all in ${seeAll}${tg.startsWith(",") ? tg + "</span>" : "</span>" + tg}`)(tgtLine(t))}
