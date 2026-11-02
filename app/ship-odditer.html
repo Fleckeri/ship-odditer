@@ -2203,7 +2203,13 @@ async function shareHaul(){
   const KEY = "mission-odds-install-dismissed";
   const panel = $("install"), link = $("install-link"), go = $("install-go");
   const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const markInstalled = () => { panel.hidden = true; link.hidden = true; $("install-status").hidden = false; };
+  // Installed, the app asks the browser to keep its offline copy even when the device runs low on space. Chromium and
+  // Safari decide by themselves; Firefox would ask the user with a prompt, so it isn't asked there.
+  const persist = () => {
+    const s = navigator.storage;
+    if (s && s.persist && !/Firefox\//.test(navigator.userAgent)) s.persisted().then(p => p || s.persist()).catch(() => {});
+  };
+  const markInstalled = () => { panel.hidden = true; link.hidden = true; $("install-status").hidden = false; persist(); };
   if (installed()) { markInstalled(); return; }
   const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const ICON = {  // Lucide glyphs standing in for each browser's own button

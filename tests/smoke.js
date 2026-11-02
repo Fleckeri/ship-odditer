@@ -240,16 +240,19 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     await ctx.close();
   }
   // Phones: both buttons use the share sheet (stubbed: headless Chromium has none); a relaunch that brings a legendary
-  // buzzes once
+  // buzzes once; installed, the app asks to keep its storage
   {
     const ctx = await b.newContext(devices['iPhone 13']); const p = await ctx.newPage();
     await ctx.addInitScript(() => {
-      window.__shared = []; window.__vib = [];
+      window.__shared = []; window.__vib = []; window.__persist = 0;
       navigator.share = async d => { __shared.push(d); }; navigator.canShare = d => !!(d && d.files);
       navigator.vibrate = pat => { __vib.push(pat); return true; };
+      Object.defineProperty(navigator, 'standalone', { get: () => true });
+      navigator.storage.persisted = async () => false; navigator.storage.persist = async () => { __persist++; return true; };
     });
     await p.goto(srv.url + '#a28');  // Atreggies Henliner, extended, 8★
     await p.waitForFunction(() => document.querySelectorAll('#tiers tbody tr').length > 0, null, { timeout: 15000 });
+    check(await p.evaluate(() => __persist === 1), 'installed: asks the browser to keep the offline copy');
     await p.click('#share-link');
     const s1 = await p.evaluate(() => __shared[0] && [__shared[0].url === linkURL(), /extended Atreggies Henliner at 8★/.test(__shared[0].text)]);
     check(JSON.stringify(s1) === '[true,true]', `phones share the mission's link with the share sheet ${JSON.stringify(s1)}`);

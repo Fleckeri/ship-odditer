@@ -417,6 +417,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   page, put `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">`
   in front, or phones emulate at 980 px and text is mojibake.
 - **localStorage** is per viewer; wrap every access in try/catch.
+- **Persistent storage.** Running installed (and on `appinstalled`), the page calls `navigator.storage.persist()` so
+  the offline copy survives low disk space. Not in Firefox, which would show a permission prompt.
 - **Install-time files** (`launch/`, `screenshots/`) aren't precached, and a visit doesn't download them (checked in
   Chromium and WebKit, Nov 2026): only the system fetches them when installing. Everyone pays only for the 36 launch
   `<link>` tags in `index.html` (7.7 KB, about 0.6 KB compressed). Whether iOS's Add to Home Screen fetches just the
@@ -440,7 +442,8 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   view with research and all and leave the address clean, a shorter code keeps the rest, `#sim`, unknown values
   ignored, a copied link opens the same view in a fresh browser); sharing (desktop copies the link and saves a 1080 px
   haul PNG; phones use the share sheet, stubbed); view transitions for theme and ship; one buzz when a relaunch brings
-  a legendary; manifest shortcuts, screenshots, and launch screens served at their stated sizes.
+  a legendary; manifest shortcuts, screenshots, and launch screens served at their stated sizes; storage persistence
+  when installed.
 - `node tests/bench.js top|tables|reward`: slider frame times on an emulated Pixel 7 with the CPU slowed 4×.
   At 1.0: 16.7 ms average and p95 on all three sliders, no long tasks.
 - Headless Chromium draws frames slowly; judge animation timing by timestamps, not screenshots.
