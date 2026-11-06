@@ -181,7 +181,7 @@ download). `seen()` reads them; `share()` divides by `n`. `build_data.py` fails 
 zerog (0-10), dcap (1|2|3, capacity event multiplier; an early save's `true` loads as 2), ftl (0-60), odds (1-99), sort ("tier"|"rarity")`. Saved to `localStorage["mission-odds"]`
 (debounced; flushed on `pagehide`) and **validated field by field on load** (old or damaged saves fall back to
 defaults). Theme: `localStorage["mission-odds-theme"]`. Dismissed install panel:
-`localStorage["mission-odds-install-dismissed"]`. After an update's reload, `sessionStorage["mission-odds-updated"]` briefly holds your place. Keep these key names, or existing users lose their settings.
+`localStorage["mission-odds-install-dismissed"]`; installed (for Chromium tabs): `localStorage["mission-odds-installed"]`. After an update's reload, `sessionStorage["mission-odds-updated"]` briefly holds your place. Keep these key names, or existing users lose their settings.
 
 **Targets.** `state.target` is what the user picked; `curTgt` (set at the top of `render()`) is the target in
 effect: null on pre-FTL ships or when the mission has no data for it, so the choice survives switching ships.
@@ -290,7 +290,11 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   dismissed. Title names the device; steps use Lucide glyphs in `.ui-key` chips; Chromium's
   `beforeinstallprompt` adds an Install button. The intro link (faded, dotted underline) shows only where install
   is possible and always reopens it; running installed, the intro says "Installed to your device." after a green
-  check, centred on the capitals. Browser menu names were written from memory (Nov 2026); check them on real devices.
+  check, centred on the capitals (inline, so it keeps the line's baseline; an inline-flex box rode ~3 px high).
+  Running installed (or on `appinstalled`) also notes it in `localStorage["mission-odds-installed"]`; Chromium tabs
+  share that storage, so a Chrome/Edge tab says "Installed" too, until `beforeinstallprompt` fires (Chromium offers it
+  only while the app isn't installed), which clears the note. Other browsers ignore the note (installed apps' storage
+  is separate, or uninstalling goes unnoticed). Browser menu names were written from memory (Nov 2026); check them on real devices.
 - Theme: Auto / Light / Dark cycle with Lucide icons and a 2.5 s flash label. Colours are tokens with the
   `prefers-color-scheme` + `[data-theme]` pattern; every colour is defined on `:root` and in both dark blocks.
 - `.dots`: a row of values with "·" between those that share a line: each item has a `--dot` (1.3em) gap on its
@@ -319,7 +323,7 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   rarity colours; light icon on `#f3f5f8` with light ones. Installed apps use the dark icon; the favicon follows
   the system theme.
 - **Intro.** One short paragraph (what it covers, from player-logged missions, adjusts to research, simulates
-  rewards). `SHARE_DESC` in `build_pwa.py` (meta, link previews, manifest, structured data) should match it.
+  rewards, everything runs locally and nothing leaves your device). `SHARE_DESC` in `build_pwa.py` (meta, link previews, manifest, structured data) should match it.
 - **Colours.** Rarity: common grey, rare blue, epic purple, legendary orange. Target green `--tgt` (= `--ok`)
   `#299b4f` / `#68c77f`: hue 150 at the rarity colours' average OKLCH lightness and chroma. Tier pills in the
   reward list are coloured by the row's rarity, not the tier.
@@ -406,9 +410,10 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   foreground and hourly. When a new version takes over (`controllerchange`, not the first install), the page
   reloads into it by itself (`reloadNow`): at once if hidden, otherwise at the first quiet moment (`QUIET_MS`, 2 s
   with no taps, keys, wheel, or scrolling, no dropdown open, no slider held, no tooltip up). It saves where you
-  were (`pickAnchor`, else `scrollY`) in `sessionStorage["mission-odds-updated"]`; after the reload
-  `restorePlace` scrolls back once the tables exist and shows "Ship Odditer updated · drop data from …"
-  (`#update-note`) for 4 s, starting when the page is visible. Until the reload the open page runs its old code but is served the new version's files, so it must not load anything new:
+  were (`pickAnchor`, else `scrollY`), with its version and data date, in `sessionStorage["mission-odds-updated"]`; after
+  the reload `restorePlace` scrolls back once the tables exist and shows `#update-note` saying what changed (`updateText`:
+  "Ship Odditer updated to 1.4.2", "New drop data from …", both, or just "Ship Odditer updated" for a new build) for
+  `NOTE_MS` (4 s) of time on screen; the countdown pauses while the page is hidden. Until the reload the open page runs its old code but is served the new version's files, so it must not load anything new:
   `loadTargets` reloads into the new version instead (`replaced`; the chosen target survives the reload). It only
   handles same-origin GET requests.
 - **Changing a data file's format? Change its path too.** A page that was open when the new version took over may
@@ -437,9 +442,9 @@ frame (`setKeyframes`) so it never flies past the button; `snapHide` hides it in
   card tooltips; targeting (share rises, rows marked, tier target lines incl. "never drops", slider updates,
   pre-FTL disables); rolling numbers stay inside their cells; launch counter; floating Relaunch flies; damaged
   saved settings are repaired; install panel per browser (shown, dismissed, reopened, hidden where impossible,
-  "Installed" when standalone); PWA installable, service worker in control, offline load incl. targeted data;
+  "Installed" when standalone, and in a Chrome tab until it's uninstalled); PWA installable, service worker in control, offline load incl. targeted data;
   updates (a new deploy downloads only the changed files, reloads by itself at a quiet moment keeping your place
-  and saying so, and works offline; a target picked after a takeover reloads into the new version); links (open their
+  and saying what changed, the note staying at least 3 s, and works offline; a target picked after a takeover reloads into the new version); links (open their
   view with research and all and leave the address clean, a shorter code keeps the rest, `#sim`, unknown values
   ignored, a copied link opens the same view in a fresh browser); sharing (desktop copies the link and saves a 1080 px
   haul PNG; phones use the share sheet, stubbed); view transitions for theme and ship; one buzz when a relaunch brings

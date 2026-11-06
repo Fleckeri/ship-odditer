@@ -173,15 +173,21 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     check(errs.length === 0 && st === JSON.stringify(['atreggies', 2, 8, 'all', 'art', 10, 1, 0, 99, null]), `damaged saved settings are repaired ${st} ${errs.join(' | ')}`);
     await ctx.close();
   }
-  // A browser that can't install shows neither the link nor the panel; an installed app says it's installed
-  for (const [name, opts, init, want] of [
-    ['desktop Firefox', { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0' }, null, [true, true, true]],
-    ['installed iPhone', devices['iPhone 13'], () => Object.defineProperty(navigator, 'standalone', { get: () => true }), [true, true, false]],
+  // A browser that can't install shows neither the link nor the panel; an installed app says it's installed and notes
+  // it, so a Chrome tab says so too, until Chrome offers to install it again (it was uninstalled)
+  const noted = () => { try { localStorage.setItem('mission-odds-installed', '1'); } catch (e) {} };
+  const uninstall = p => p.evaluate(() => dispatchEvent(new Event('beforeinstallprompt', { cancelable: true })));
+  for (const [name, opts, init, want, note, then] of [
+    ['desktop Firefox', { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0' }, null, [true, true, true], null],
+    ['installed iPhone', devices['iPhone 13'], () => Object.defineProperty(navigator, 'standalone', { get: () => true }), [true, true, false], '1'],
+    ['Chrome tab, app installed', {}, noted, [true, true, false], '1'],
+    ['Chrome tab, app uninstalled', {}, noted, [false, false, true], null, uninstall],
   ]) {
     const ctx = await b.newContext(opts); if (init) await ctx.addInitScript(init); const p = await ctx.newPage();
     await p.goto(srv.url); await p.waitForFunction(() => document.querySelectorAll('#tiers tbody tr').length > 0);
-    const got = await p.evaluate(() => ['install', 'install-link', 'install-status'].map(id => document.getElementById(id).hidden));
-    check(JSON.stringify(got) === JSON.stringify(want), `${name}: install link and panel state ${JSON.stringify(got)}`);
+    if (then) await then(p);
+    const got = await p.evaluate(() => [...['install', 'install-link', 'install-status'].map(id => document.getElementById(id).hidden), localStorage.getItem('mission-odds-installed')]);
+    check(JSON.stringify(got) === JSON.stringify([...want, note]), `${name}: install link and panel state ${JSON.stringify(got)}`);
     await ctx.close();
   }
   // Links (short codes, see linkCode): a link opens its view and is cleared from the address once saved, a shorter code
@@ -324,11 +330,21 @@ const check = (ok, msg) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (
     const fetched = await reloaded.then(() => [...new Set(log)].sort());
     check(JSON.stringify(fetched) === '["/data.json","/sw.js"]', `the update downloads only the changed files ${JSON.stringify(fetched)}`);
     const shown = await p.waitForFunction(() => !document.getElementById('update-note').hidden, null, { timeout: 10000 }).then(() => true, () => false);
+    const shownAt = Date.now();
     await p.waitForTimeout(600);
     const after = await p.evaluate(() => [document.getElementById('data-date').textContent, document.getElementById('update-note').textContent,
       document.querySelector('#tiers section.tier[data-t="3"]').getBoundingClientRect().top]);
-    check(shown && /2 Jan 2030/.test(after[0]) && /updated/.test(after[1]), `a new deploy reloads by itself and says so ${JSON.stringify(after.slice(0, 2))}`);
+    check(shown && /2 Jan 2030/.test(after[0]) && after[1] === 'New drop data from 2 Jan 2030', `a new deploy reloads by itself and says what changed ${JSON.stringify(after.slice(0, 2))}`);
     check(Math.abs(after[2] - before) < 40, `the reload keeps your place (tier 3 at ${Math.round(before)} → ${Math.round(after[2])} px)`);
+    // The note names a new version, new data, both, or neither; an older page's save (no version) gets both
+    const notes = await p.evaluate(() => [{ ver: APP_VERSION, data: DATA.dataUpdated }, { ver: '0.0.1', data: DATA.dataUpdated },
+      { ver: APP_VERSION, data: '2000-01-01' }, { ver: '0.0.1', data: '2000-01-01' }, { y: 0 }].map(updateText));
+    const v = await p.evaluate(() => APP_VERSION);
+    check(JSON.stringify(notes) === JSON.stringify(['Ship Odditer updated', `Ship Odditer updated to ${v}`, 'New drop data from 2 Jan 2030',
+      `Ship Odditer updated to ${v} · new drop data from 2 Jan 2030`, `Ship Odditer updated to ${v} · new drop data from 2 Jan 2030`]), `the update note says what changed ${JSON.stringify(notes)}`);
+    await p.waitForFunction(() => document.getElementById('update-note').hidden, null, { timeout: 10000 });
+    const stayed = Date.now() - shownAt;
+    check(stayed >= 3000, `the update note stays at least 3 s (${stayed} ms)`);
     await ctx.setOffline(true); await p.reload(); await p.waitForTimeout(1500);
     check(/2 Jan 2030/.test(await p.$eval('#data-date', e => e.textContent).catch(() => '')) && await p.evaluate(() => document.querySelectorAll('#tiers tbody tr').length > 0), 'the updated version works offline');
     // Another deploy takes over while the page is open. Picking a target before the quiet reload needs a targeted
