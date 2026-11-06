@@ -10,7 +10,7 @@
 level, measured from player-logged missions. Adjusts to your Zero-G and FTL research, and simulates a launch's
 rewards.
 
-**Use it at <https://fleckeri.github.io/ship-odditer/>.** Version 1.4.1 · [Changelog](CHANGELOG.md)
+**Use it at <https://fleckeri.github.io/ship-odditer/>.** Version 1.4.2 · [Changelog](CHANGELOG.md)
 
 ## Features
 

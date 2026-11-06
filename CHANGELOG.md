@@ -2,6 +2,15 @@
 
 All notable changes to Ship Odditer. Dates are UTC.
 
+## 1.4.2 (2026-11-06)
+
+- Opening the site in Chrome or Edge after installing the app says it's installed, instead of offering to install it
+  again.
+- After an update, the note says what changed (a new version, new drop data, or both) and stays for 4 seconds of time
+  on screen, so switching away doesn't make you miss it.
+- The intro says everything runs locally and nothing leaves your device, and "Installed to your device." now lines up
+  with the text around it.
+
 ## 1.4.1 (2026-11-02)
 
 - Sharing the simulated haul from a phone also sends a link to the same view, so whoever sees the picture can open
